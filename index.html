@@ -191,7 +191,7 @@ body.dark .ochip:hover{filter:brightness(1.14);}
       <div class="toolbar">
         <span class="saveind" id="saveind"><span class="ms">check</span>저장됨</span>
         <button class="iconbtn" id="themeBtn" aria-label="다크모드" title="다크모드"><span class="ms">dark_mode</span></button>
-        <button class="iconbtn" id="saveBtn" aria-label="저장 (아카이브)" title="저장 (아카이브)"><span class="ms">save</span></button>
+        <button class="iconbtn" id="saveBtn" aria-label="DB 저장" title="DB 저장"><span class="ms">save</span></button>
         <button class="iconbtn" id="loadBtn" aria-label="불러오기" title="불러오기"><span class="ms">folder_open</span></button>
         <button class="iconbtn accent" id="addBtn" aria-label="과업 추가" title="과업 추가"><span class="ms">add</span></button>
         <input type="file" id="loadFile" accept=".html,.json,text/html,application/json" hidden>
@@ -496,18 +496,24 @@ body.dark .ochip:hover{filter:brightness(1.14);}
     saveLocal();closeModal();render();
   });
 
-  // ----- archive: save as self-contained HTML -----
   function archiveName(){var d=new Date();
     return d.getFullYear()+"."+pad(d.getMonth()+1)+"."+pad(d.getDate())+"_"+DOWK[d.getDay()]+"_주간리듬미팅_UX기획파트.html";}
+  function flashSave(msg){var si=document.getElementById("saveind");if(!si)return;
+    si.lastChild&&(si.lastChild.textContent=msg||"저장됨");si.classList.add("on");
+    clearTimeout(saveTimer);saveTimer=setTimeout(function(){si.classList.remove("on");},1600);}
   document.getElementById("saveBtn").addEventListener("click",function(){
     if(!state.label)state.label=weekLabel(new Date());
-    var old=document.getElementById("seedData");if(old)old.remove();
-    var sc=document.createElement("script");sc.id="seedData";sc.type="application/json";sc.textContent=JSON.stringify(state);
-    document.head.appendChild(sc);
-    var html="<!DOCTYPE html>\n"+document.documentElement.outerHTML;
-    sc.remove();
-    var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));
-    a.download=archiveName();a.click();
+    if(sb){
+      sb.from("rhythm").upsert({id:"main",data:Object.assign({},state,{_by:CLIENT}),updated_at:new Date().toISOString()})
+        .then(function(r){flashSave(r&&r.error?"저장 실패":"DB 저장됨");},function(){flashSave("저장 실패");});
+    }else{
+      var old=document.getElementById("seedData");if(old)old.remove();
+      var sc=document.createElement("script");sc.id="seedData";sc.type="application/json";sc.textContent=JSON.stringify(state);
+      document.head.appendChild(sc);
+      var html="<!DOCTYPE html>\n"+document.documentElement.outerHTML;sc.remove();
+      var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));
+      a.download=archiveName();a.click();
+    }
   });
 
   // ----- load a saved archive (html or json) -----
