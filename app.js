@@ -337,17 +337,6 @@
   });
 
 
-  // ----- load a saved archive (html or json) -----
-  document.getElementById("loadBtn").addEventListener("click",function(){document.getElementById("loadFile").click();});
-  document.getElementById("loadFile").addEventListener("change",function(e){
-    var f=e.target.files[0];if(!f)return;var r=new FileReader();
-    r.onload=function(){var txt=r.result,data=null;
-      var m=/<script id="seedData"[^>]*>([\s\S]*?)<\/script>/.exec(txt);
-      try{data=m?JSON.parse(m[1]):JSON.parse(txt);}catch(err){alert("불러오기 실패: 저장된 리듬미팅 HTML 또는 JSON만 가능합니다.");return;}
-      if(!data||!data.tasks){alert("불러오기 실패: 과업 데이터를 찾을 수 없습니다.");return;}
-      state=data;saveLocal();render();};
-    r.readAsText(f);e.target.value="";
-  });
 
   // ----- editable title / part -----
   var docTitle=document.getElementById("docTitle"),docPart=document.getElementById("docPart");
