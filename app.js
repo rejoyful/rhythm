@@ -146,7 +146,7 @@
   }
   function chipCell(t){var s=statusObj(t.friStatus);
     return '<button class="chip '+s.cls+'" data-id="'+t.id+'"><span class="ms">'+s.icon+'</span>'+esc(t.friStatus)+'</button>';}
-  function ed(f,id,v,cls){return '<div class="'+cls+'"'+CE()+' data-field="'+f+'" data-id="'+id+'">'+esc(v)+'</div>';}
+  function ed(f,id,v,cls,lab){return '<div class="'+cls+'"'+CE()+' data-field="'+f+'" data-id="'+id+'"'+(lab?' data-label="'+lab+'"':'')+'>'+esc(v)+'</div>';}
   function purposeCell(t){
     if(t.asis===undefined&&t.tobe===undefined)
       return '<div class="why"'+CE()+' data-field="why" data-id="'+t.id+'">'+esc(t.why||"")+'</div>';
@@ -164,7 +164,7 @@
   }
   function dueToISO(d){if(!d)return"";if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d;
     var m=/^(\d{1,2})[\/.\-](\d{1,2})$/.exec(d);if(m)return new Date().getFullYear()+"-"+pad(+m[1])+"-"+pad(+m[2]);return"";}
-  function dueCell(t){return '<input type="date" class="fdate"'+(EDITABLE?"":" disabled")+' data-field="due" data-id="'+t.id+'" value="'+dueToISO(t.due)+'">';}
+  function dueCell(t){return '<div class="duec" data-label="기한"><input type="date" class="fdate"'+(EDITABLE?"":" disabled")+' data-field="due" data-id="'+t.id+'" value="'+dueToISO(t.due)+'"></div>';}
 
   // ----- tree (group) helpers -----
   function childrenOf(pid){return state.tasks.filter(function(x){return (x.parent||null)===pid;}).sort(function(a,b){return(a.pri||99)-(b.pri||99);});}
@@ -196,11 +196,11 @@
         : '<div class="pri"'+CE()+' data-field="pri" data-id="'+t.id+'">'+pad(t.pri)+'</div>';
       var sp='<div class="sp"></div>';
       if(curDay==="mon"){cells=
-        priCell+edWhat(t)+sp+ed("asis",t.id,t.asis||"","why")+ed("tobe",t.id,t.tobe||"","why")+ownerCell(t)+dueCell(t);
+        priCell+edWhat(t)+sp+ed("asis",t.id,t.asis||"","why","AS-IS")+ed("tobe",t.id,t.tobe||"","why","TO-BE")+ownerCell(t)+dueCell(t);
       }else if(curDay==="wed"){cells=
-        priCell+edWhat(t)+sp+ed("wedNote",t.id,t.wedNote,"note")+progCell(t)+ownerCell(t)+dueCell(t);
+        priCell+edWhat(t)+sp+ed("wedNote",t.id,t.wedNote,"note","병목 · 변수")+progCell(t)+ownerCell(t)+dueCell(t);
       }else{cells=
-        priCell+edWhat(t)+sp+ed("friNote",t.id,t.friNote,"note")+chipCell(t)+ownerCell(t)+dueCell(t);
+        priCell+edWhat(t)+sp+ed("friNote",t.id,t.friNote,"note","이월 · 수정")+chipCell(t)+ownerCell(t)+dueCell(t);
       }
       var done=(curDay==="fri"&&/완료/.test(t.friStatus))||(curDay==="wed"&&t.wedPct===100);
       return '<div class="row'+(done?" done":"")+(depth>0?" child":"")+'" data-id="'+t.id+'" style="grid-template-columns:'+GRID[curDay]+'">'+
