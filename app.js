@@ -188,6 +188,7 @@
 
     var order=buildOrder();
     var tb=document.getElementById("tbody");
+    tb.dataset.day=curDay;
     tb.style.gridTemplateRows="repeat("+Math.max(order.length,1)+",minmax(min-content,1fr))";
     tb.innerHTML=order.map(function(o){
       var t=o.t,depth=o.depth,cells;

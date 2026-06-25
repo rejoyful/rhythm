@@ -250,8 +250,9 @@ body.dark .ochip:hover{filter:brightness(1.14);}
 @media (max-width:600px){
   .selwrap{display:none;}
 
-  /* card becomes two equal columns; number pinned top-left, delete pinned to the box corner */
-  .row{grid-template-columns:1fr 1fr!important;column-gap:.6rem;row-gap:.55rem;padding:.85rem;}
+  /* two equal columns. minmax(0,1fr) lets a track shrink below its content's min-width,
+     so the iOS Safari date input can no longer push the 기한 box past the card edge. */
+  .row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;column-gap:.55rem;row-gap:.55rem;padding:.85rem;}
   .row .pri{grid-column:1;grid-row:1;justify-self:start;}
   .row .pri.sub{align-self:start;}
   .row .what{grid-column:1 / -1;grid-row:1;padding-left:2rem;padding-right:2.1rem;}
@@ -262,9 +263,18 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   /* body blocks stay full width */
   .row .why,.row .note,.row .purpose,.row .prog,.row .chip{grid-column:1 / -1;}
 
-  /* footer: 담당(left) + 기한(right) on one line, equal halves */
-  .row .ochip{grid-column:1;justify-self:stretch;align-self:center;}
-  .row .duec{grid-column:2;justify-self:stretch;align-self:center;padding-top:0;}
+  /* MON/WED footer: 담당 + 기한, equal halves */
+  .row .ochip{grid-column:1;justify-self:stretch;align-self:center;min-width:0;font-size:.86rem;}
+  .row .duec{grid-column:2;justify-self:stretch;align-self:center;padding-top:0;min-width:0;}
   .row .duec::before{display:none;}
-  .row .fdate{min-width:0;width:100%;font-size:.84rem;padding:0 .45rem;}
+  .row .fdate{min-width:0;width:100%;max-width:100%;box-sizing:border-box;font-size:.84rem;padding:0 .4rem;}
+
+  /* FRI(마감) footer: 진행(상태) + 담당 + 기한 share one line, 3 equal columns */
+  .tbody[data-day="fri"] .row{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+  .tbody[data-day="fri"] .row .chip{grid-column:1;justify-self:stretch;align-self:center;min-width:0;
+    justify-content:center;gap:.2rem;padding:0 .3rem;font-size:.8rem;}
+  .tbody[data-day="fri"] .row .ochip{grid-column:2;justify-content:center;gap:.2rem;padding:0 .3rem;font-size:.8rem;}
+  .tbody[data-day="fri"] .row .duec{grid-column:3;}
+  .tbody[data-day="fri"] .row .fdate{font-size:.76rem;padding:0 .25rem;}
+  .tbody[data-day="fri"] .row .chip .ms,.tbody[data-day="fri"] .row .ochip .ms{font-size:1rem;}
 }
