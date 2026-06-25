@@ -267,7 +267,14 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row .ochip{grid-column:1;justify-self:stretch;align-self:center;min-width:0;font-size:.86rem;}
   .row .duec{grid-column:2;justify-self:stretch;align-self:center;padding-top:0;min-width:0;}
   .row .duec::before{display:none;}
-  .row .fdate{min-width:0;width:100%;max-width:100%;box-sizing:border-box;font-size:.84rem;padding:0 .4rem;}
+  /* date input on phones: use the Korean body font (Pretendard) — far narrower than the mono;
+     -webkit-appearance:none forces iOS Safari to honor width:100% (it otherwise keeps an
+     intrinsic min-width and spills out); the date-and-time-value margin reset kills iOS's
+     built-in inset that also widened the box. */
+  .row .fdate{-webkit-appearance:none;appearance:none;font-family:var(--body);font-weight:600;
+    min-width:0;width:100%;max-width:100%;box-sizing:border-box;font-size:.82rem;padding:0 .4rem;letter-spacing:-.02em;}
+  .row .fdate::-webkit-date-and-time-value{margin:0;text-align:left;}
+  .row .fdate::-webkit-calendar-picker-indicator{margin:0;padding:0;width:1rem;flex:none;}
 
   /* FRI(마감) footer: 진행(상태) + 담당 + 기한 share one line, 3 equal columns */
   .tbody[data-day="fri"] .row{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
