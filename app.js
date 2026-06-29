@@ -164,7 +164,7 @@
   }
   function dueToISO(d){if(!d)return"";if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d;
     var m=/^(\d{1,2})[\/.\-](\d{1,2})$/.exec(d);if(m)return new Date().getFullYear()+"-"+pad(+m[1])+"-"+pad(+m[2]);return"";}
-  function dueCell(t){return '<div class="duec" data-label="기한"><input type="date" class="fdate"'+(EDITABLE?"":" disabled")+' data-field="due" data-id="'+t.id+'" value="'+dueToISO(t.due)+'"></div>';}
+  function dueCell(t){var iso=dueToISO(t.due);return '<div class="duec'+(iso?"":" empty")+'" data-label="기한"><input type="date" class="fdate"'+(EDITABLE?"":" disabled")+' data-field="due" data-id="'+t.id+'" value="'+iso+'"></div>';}
 
   // ----- tree (group) helpers -----
   function childrenOf(pid){return state.tasks.filter(function(x){return (x.parent||null)===pid;}).sort(function(a,b){return(a.pri||99)-(b.pri||99);});}
@@ -234,7 +234,7 @@
   tb.addEventListener("change",function(e){
     if(readOnly)return;
     var el=e.target;if(!el.dataset||!el.dataset.field)return;var t=getTask(el.dataset.id);if(!t)return;
-    if(el.dataset.field==="due"){t.due=el.value||"—";saveLocal();return;}
+    if(el.dataset.field==="due"){t.due=el.value||"—";var dc=el.closest(".duec");if(dc)dc.classList.toggle("empty",!el.value);saveLocal();return;}
   });
   tb.addEventListener("click",function(e){
     if(readOnly)return;

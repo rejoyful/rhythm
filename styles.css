@@ -16,7 +16,7 @@ body.dark [contenteditable]:hover{background:#1a1a1a;}
 body.dark [contenteditable]:focus{background:#151515;}
 body.dark .row.done .pri{color:#444;}
 *{margin:0;padding:0;box-sizing:border-box;}
-html{font-size:clamp(13px,min(0.92vw,1.95vh),18px);}
+html{font-size:clamp(13px,min(0.85vw,1.4vh),18px);}
 body{font-family:var(--body);color:var(--ink);background:var(--paper);
   height:100dvh;display:flex;flex-direction:column;padding:2vh 3vw 1.8vh;overflow:hidden;
   -webkit-font-smoothing:antialiased;}
@@ -275,6 +275,12 @@ body.dark .ochip:hover{filter:brightness(1.14);}
     min-width:0;width:100%;max-width:100%;box-sizing:border-box;font-size:.82rem;padding:0 .4rem;letter-spacing:-.02em;}
   .row .fdate::-webkit-date-and-time-value{margin:0;text-align:left;}
   .row .fdate::-webkit-calendar-picker-indicator{margin:0;padding:0;width:1rem;flex:none;}
+  /* unset due date: appearance:none hides the native placeholder on iOS (blank white box),
+     so paint a clear "미정" label and keep the input tappable underneath. */
+  .row .duec.empty{position:relative;}
+  .row .duec.empty .fdate{color:transparent;}
+  .row .duec.empty::after{content:"미정";position:absolute;top:0;left:0;bottom:0;display:flex;align-items:center;
+    padding-left:.5rem;color:var(--faint);font-family:var(--body);font-size:.82rem;pointer-events:none;}
 
   /* FRI(마감) footer: 진행(상태) + 담당 + 기한 share one line, 3 equal columns */
   .tbody[data-day="fri"] .row{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
