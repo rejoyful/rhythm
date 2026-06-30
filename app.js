@@ -80,6 +80,8 @@
   var DOW=["SUN","MON","TUE","WED","THU","FRI","SAT"];
   var DOWK=["일","월","화","수","목","금","토"];
   function pad(n){return(n<10?"0":"")+n;}
+  var GRP_N=7;  // brand tint palette size (styles.css .grp-0..6)
+  function hashStr(s){s=String(s);var h=0,i;for(i=0;i<s.length;i++){h=((h<<5)-h+s.charCodeAt(i))|0;}return Math.abs(h);}
   function fmtToday(d){return d.getFullYear()+"."+pad(d.getMonth()+1)+"."+pad(d.getDate())+" "+DOW[d.getDay()];}
   function weekLabel(d){var day=(d.getDay()+6)%7,mon=new Date(d);mon.setDate(d.getDate()-day);
     var fri=new Date(mon);fri.setDate(mon.getDate()+4);
@@ -187,6 +189,17 @@
     th.innerHTML=HEAD[curDay].map(function(h){return '<div class="h">'+h+'</div>';}).join("");
 
     var order=buildOrder();
+    // assign a faint tint colour to each group (a parent that has children + its children).
+    // depth-first order keeps a parent immediately before its children, so we carry the
+    // current group colour forward; neighbouring groups are forced to differ.
+    var _prevG=-1,_curG=null;
+    order.forEach(function(o){
+      if(o.depth===0){
+        if(childrenOf(o.t.id).length>0){var c=hashStr(o.t.id)%GRP_N;if(c===_prevG)c=(c+1)%GRP_N;_prevG=c;_curG=c;}
+        else _curG=null;
+      }
+      o.grp=_curG;
+    });
     var tb=document.getElementById("tbody");
     tb.dataset.day=curDay;
     tb.style.gridTemplateRows="repeat("+Math.max(order.length,1)+",minmax(min-content,1fr))";
@@ -204,7 +217,7 @@
         priCell+edWhat(t)+sp+ed("friNote",t.id,t.friNote,"note","이월 · 수정")+chipCell(t)+ownerCell(t)+dueCell(t);
       }
       var done=(curDay==="fri"&&/완료/.test(t.friStatus))||(curDay==="wed"&&t.wedPct===100);
-      return '<div class="row'+(done?" done":"")+(depth>0?" child":"")+'" data-id="'+t.id+'" style="grid-template-columns:'+GRID[curDay]+'">'+
+      return '<div class="row'+(done?" done":"")+(depth>0?" child":"")+(o.grp!=null?" grp-"+o.grp:"")+'" data-id="'+t.id+'" style="grid-template-columns:'+GRID[curDay]+'">'+
         (EDITABLE?'<span class="dragh" data-id="'+t.id+'" aria-label="순서 이동"><span class="ms">drag_indicator</span></span>':'')+
         cells+
         (EDITABLE?'<button class="del" data-id="'+t.id+'" aria-label="삭제"><span class="ms">delete</span></button>':'')+'</div>';

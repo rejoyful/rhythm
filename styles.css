@@ -83,8 +83,16 @@ body.dragging-active .dragh{cursor:grabbing;}
 .row.dropbefore{box-shadow:inset 0 3px 0 var(--red);}
 .row.dropafter{box-shadow:inset 0 -3px 0 var(--red);}
 .row.dropnest{box-shadow:inset 0 0 0 2px var(--red);background:rgba(215,25,33,.05);}
-.row.child{background:rgba(0,0,0,.025);}
-body.dark .row.child{background:rgba(255,255,255,.04);}
+/* Project groups — a parent task + its children share ONE faint brand tint so the whole
+   group reads as a single block. The colour index (grp-0..6) is assigned per group in
+   app.js (stable hash of the group id, neighbours forced to differ). Replaces the old
+   neutral child shading. Works the same for the desktop table rows and the mobile cards. */
+.row.grp-0{background:#eef3fb;}.row.grp-1{background:#e8f5f2;}.row.grp-2{background:#eff6ea;}
+.row.grp-3{background:#faf4e6;}.row.grp-4{background:#fcf0e7;}.row.grp-5{background:#fcedf1;}
+.row.grp-6{background:#f1f5e6;}
+body.dark .row.grp-0{background:#141b27;}body.dark .row.grp-1{background:#102120;}body.dark .row.grp-2{background:#152017;}
+body.dark .row.grp-3{background:#211d11;}body.dark .row.grp-4{background:#231a12;}body.dark .row.grp-5{background:#221520;}
+body.dark .row.grp-6{background:#1d2113;}
 .row.child .what{padding-left:1.5rem;}
 .pri.sub{display:flex;align-items:center;justify-content:flex-start;color:var(--faint);}
 .pri.sub .ms{font-size:1.2rem;}
