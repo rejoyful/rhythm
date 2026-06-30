@@ -272,23 +272,26 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row .why,.row .note,.row .purpose,.row .prog,.row .chip{grid-column:1 / -1;}
 
   /* MON/WED footer: 담당 + 기한, equal halves */
-  .row .ochip{grid-column:1;justify-self:stretch;align-self:center;min-width:0;font-size:.86rem;}
-  .row .duec{grid-column:2;justify-self:stretch;align-self:center;padding-top:0;min-width:0;}
-  .row .duec::before{display:none;}
+  .row .ochip{grid-column:1;justify-self:stretch;align-self:center;min-width:0;font-size:.86rem;justify-content:center;}
+  .row .duec{grid-column:2;justify-self:stretch;align-self:center;padding-top:0;min-width:0;position:relative;}
+  /* custom calendar icon — appearance:none strips the native one; Material Symbols, adapts to theme */
+  .row .duec::before{content:"calendar_month";font-family:'Material Symbols Outlined';font-feature-settings:'liga';
+    font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;display:block;position:absolute;top:50%;left:auto;right:.4rem;
+    transform:translateY(-50%);font-size:1.05rem;line-height:1;color:var(--mut);pointer-events:none;}
   /* date input on phones: use the Korean body font (Pretendard) — far narrower than the mono;
      -webkit-appearance:none forces iOS Safari to honor width:100% (it otherwise keeps an
      intrinsic min-width and spills out); the date-and-time-value margin reset kills iOS's
      built-in inset that also widened the box. */
   .row .fdate{-webkit-appearance:none;appearance:none;font-family:var(--body);font-weight:600;
-    min-width:0;width:100%;max-width:100%;box-sizing:border-box;font-size:.82rem;padding:0 .4rem;letter-spacing:-.02em;}
-  .row .fdate::-webkit-date-and-time-value{margin:0;text-align:left;}
-  .row .fdate::-webkit-calendar-picker-indicator{margin:0;padding:0;width:1rem;flex:none;}
+    min-width:0;width:100%;max-width:100%;box-sizing:border-box;font-size:.86rem;padding:0 1.5rem;text-align:center;letter-spacing:-.02em;}
+  .row .fdate::-webkit-date-and-time-value{margin:0;text-align:center;}
+  .row .fdate::-webkit-calendar-picker-indicator{display:none;}
   /* unset due date: appearance:none hides the native placeholder on iOS (blank white box),
      so paint a clear "미정" label and keep the input tappable underneath. */
   .row .duec.empty{position:relative;}
   .row .duec.empty .fdate{color:transparent;}
-  .row .duec.empty::after{content:"미정";position:absolute;top:0;left:0;bottom:0;display:flex;align-items:center;
-    padding-left:.5rem;color:var(--faint);font-family:var(--body);font-size:.82rem;pointer-events:none;}
+  .row .duec.empty::after{content:"미정";position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;
+    justify-content:center;color:var(--faint);font-family:var(--body);font-size:.86rem;pointer-events:none;}
 
   /* FRI(마감) footer: 진행(상태) + 담당 + 기한 share one line, 3 equal columns */
   .tbody[data-day="fri"] .row{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
@@ -296,6 +299,7 @@ body.dark .ochip:hover{filter:brightness(1.14);}
     justify-content:center;gap:.2rem;padding:0 .3rem;font-size:.8rem;}
   .tbody[data-day="fri"] .row .ochip{grid-column:2;justify-content:center;gap:.2rem;padding:0 .3rem;font-size:.8rem;}
   .tbody[data-day="fri"] .row .duec{grid-column:3;}
-  .tbody[data-day="fri"] .row .fdate{font-size:.76rem;padding:0 .25rem;}
+  .tbody[data-day="fri"] .row .fdate{font-size:.8rem;padding:0 .3rem;}
+  .tbody[data-day="fri"] .row .duec::before{display:none;}
   .tbody[data-day="fri"] .row .chip .ms,.tbody[data-day="fri"] .row .ochip .ms{font-size:1rem;}
 }

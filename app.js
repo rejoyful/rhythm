@@ -157,7 +157,7 @@
       +'<div class="pl"><span class="plk tobe">TO-BE</span><span class="ped"'+CE()+' data-field="tobe" data-id="'+t.id+'">'+esc(t.tobe||"")+'</span></div>'
       +'</div>';
   }
-  var ROSTER=["이해원 차장","이재현 대리","정유나 대리","노혜진 책임"];
+  var ROSTER=["이해원 차장","이재현 대리","정유나 대리","UX 파트"];
   function ownerList(){return ["—"].concat(ROSTER);}
   function ownerCell(t){
     var label=(t.owner&&t.owner!=="—")?t.owner:"미정";
