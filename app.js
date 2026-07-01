@@ -25,7 +25,39 @@
   function saveRemote(){if(!sb||readOnly||!viewWeek)return;clearTimeout(saveT);saveT=setTimeout(function(){
     if(!state.label)state.label=weekLabel(new Date());
     sb.from("rhythm").upsert({id:viewWeek,data:Object.assign({},state,{_by:CLIENT}),updated_at:new Date().toISOString()}).then(function(){},function(){});},400);}
-  function applyRemote(d){if(!d||d._by===CLIENT)return;delete d._by;applyView(d);}
+  function touch(t){if(t)t._v=Date.now();}
+  var pendingRender=false;
+  function isEditing(){var a=document.activeElement;if(!a)return false;
+    if(a.id==="docTitle"||a.id==="docPart")return true;
+    return (a.isContentEditable||a.tagName==="INPUT"||a.tagName==="TEXTAREA")&&!!(a.closest&&a.closest("#tbody"));}
+  function scheduleRender(){if(isEditing())pendingRender=true;else render();}
+  // Per-task merge: keep the newer version of each task by _v (deletes travel as _del tombstones),
+  // so two people editing different tasks never overwrite each other. If our local copy is the
+  // newer one, we re-upload so the shared row converges.
+  function mergeInto(remote){
+    remote=normalize(remote);
+    var lById={};state.tasks.forEach(function(t){lById[t.id]=t;});
+    var rById={};remote.tasks.forEach(function(t){rById[t.id]=t;});
+    var dirty=false;
+    remote.tasks.forEach(function(rt){
+      var lt=lById[rt.id];
+      if(!lt){state.tasks.push(rt);}
+      else{var i=state.tasks.indexOf(lt),rv=rt._v||0,lv=lt._v||0;
+        if(rv>lv)state.tasks[i]=rt;else if(lv>rv)dirty=true;}
+    });
+    state.tasks.forEach(function(lt){if(!rById[lt.id])dirty=true;});   // local-only task not yet in the row
+    if((remote._mv||0)>=(state._mv||0)){state.title=remote.title;state.part=remote.part;state._mv=remote._mv||state._mv;}
+    else dirty=true;
+    if(remote.label)state.label=remote.label;if(remote.start)state.start=remote.start;
+    return dirty;
+  }
+  function applyRemote(d){if(!d||d._by===CLIENT)return;delete d._by;
+    var dirty=mergeInto(d);
+    var dt=document.getElementById("docTitle"),dp=document.getElementById("docPart");
+    if(dt&&document.activeElement!==dt)dt.textContent=state.title;
+    if(dp&&document.activeElement!==dp)dp.textContent=state.part;
+    refreshWeekSel();scheduleRender();
+    if(dirty)saveRemote();}
   function refreshWeekSel(){var sel=document.getElementById("weekSel");if(!sel)return;
     sel.innerHTML=weeksList.map(function(id){var lb=(weekLabels[id]||id)+(id===curWeek?" · 현재":"");
       return '<option value="'+id+'"'+(id===viewWeek?" selected":"")+'>'+lb+'</option>';}).join("");}
@@ -37,8 +69,8 @@
     var curStart=state.start?new Date(state.start):mondayOf(new Date());
     var ns=new Date(curStart);ns.setDate(ns.getDate()+7);var newId=isoWeekId(ns);
     while(weeksList.indexOf(newId)>=0){ns.setDate(ns.getDate()+7);newId=isoWeekId(ns);}
-    var carried=state.tasks.filter(function(t){return t.friStatus!=="완료";}).map(function(t){
-      return {id:t.id,parent:(t.parent||null),pri:t.pri,what:t.what,asis:t.asis,tobe:t.tobe,owner:t.owner,due:t.due,wedPct:null,wedNote:"—",friStatus:"진행중",friNote:"—"};});
+    var carried=state.tasks.filter(function(t){return !t._del&&t.friStatus!=="완료";}).map(function(t){
+      return {id:t.id,parent:(t.parent||null),pri:t.pri,what:t.what,asis:t.asis,tobe:t.tobe,owner:t.owner,due:t.due,wedPct:null,wedNote:"—",friStatus:"진행중",friNote:"—",_v:Date.now()};});
     var keep={};carried.forEach(function(t){keep[t.id]=1;});
     carried.forEach(function(t){if(t.parent&&!keep[t.parent])t.parent=null;});
     var data=normalize({start:isoDate(ns),label:weekLabel(ns),title:state.title,part:state.part,tasks:carried});
@@ -117,9 +149,9 @@
   var curDay="mon";
 
   var GRID={
-    mon:"4.2rem 26rem 100px 1fr 1fr 9rem 10rem",
-    wed:"4.2rem 26rem 100px 1fr 13rem 9rem 10rem",
-    fri:"4.2rem 26rem 100px 1fr 12rem 9rem 10rem"
+    mon:"4.2rem 26rem 100px minmax(0,1fr) minmax(0,1fr) 9rem 10rem",
+    wed:"4.2rem 26rem 100px minmax(0,1fr) 13rem 9rem 10rem",
+    fri:"4.2rem 26rem 100px minmax(0,1fr) 12rem 9rem 10rem"
   };
   var HEAD={
     mon:["NO","과업","","AS-IS","TO-BE","담당","기한"],
@@ -169,12 +201,12 @@
   function dueCell(t){var iso=dueToISO(t.due);return '<div class="duec'+(iso?"":" empty")+'" data-label="기한"><input type="date" class="fdate"'+(EDITABLE?"":" disabled")+' data-field="due" data-id="'+t.id+'" value="'+iso+'"></div>';}
 
   // ----- tree (group) helpers -----
-  function childrenOf(pid){return state.tasks.filter(function(x){return (x.parent||null)===pid;}).sort(function(a,b){return(a.pri||99)-(b.pri||99);});}
+  function childrenOf(pid){return state.tasks.filter(function(x){return !x._del&&(x.parent||null)===pid;}).sort(function(a,b){return(a.pri||99)-(b.pri||99);});}
   function buildOrder(){var res=[];(function walk(pid,depth){childrenOf(pid).forEach(function(t){res.push({t:t,depth:depth});walk(t.id,depth+1);});})(null,0);return res;}
   function isDesc(aId,bId){var t=getTask(aId),g=0;while(t&&t.parent&&g++<200){if(t.parent===bId)return true;t=getTask(t.parent);}return false;}
   function renumberAll(){
     var pids=[null].concat(state.tasks.map(function(t){return t.id;}));
-    pids.forEach(function(pid){childrenOf(pid).forEach(function(t,i){t.pri=i+1;});});
+    pids.forEach(function(pid){childrenOf(pid).forEach(function(t,i){if(t.pri!==i+1){t.pri=i+1;touch(t);}});});
   }
 
   function render(){
@@ -222,6 +254,7 @@
         cells+
         (EDITABLE?'<button class="del" data-id="'+t.id+'" aria-label="삭제"><span class="ms">delete</span></button>':'')+'</div>';
     }).join("");
+    pendingRender=false;
   }
   function getTask(id){return state.tasks.filter(function(x){return String(x.id)===String(id);})[0];}
 
@@ -238,7 +271,7 @@
       if(t.wedPct===100)t.friStatus="완료";else if(t.friStatus==="완료")t.friStatus="진행중";}
     else if(f==="pri"){var p=parseInt(el.textContent.replace(/[^0-9]/g,""),10);if(!isNaN(p))t.pri=p;}
     else t[f]=el.textContent;
-    saveLocal();
+    touch(t);saveLocal();
   });
   tb.addEventListener("focusout",function(e){
     var f=e.target&&e.target.dataset&&e.target.dataset.field;
@@ -247,26 +280,26 @@
   tb.addEventListener("change",function(e){
     if(readOnly)return;
     var el=e.target;if(!el.dataset||!el.dataset.field)return;var t=getTask(el.dataset.id);if(!t)return;
-    if(el.dataset.field==="due"){t.due=el.value||"—";var dc=el.closest(".duec");if(dc)dc.classList.toggle("empty",!el.value);saveLocal();return;}
+    if(el.dataset.field==="due"){t.due=el.value||"—";var dc=el.closest(".duec");if(dc)dc.classList.toggle("empty",!el.value);touch(t);saveLocal();return;}
   });
   tb.addEventListener("click",function(e){
     if(readOnly)return;
     var del=e.target.closest(".del");
     if(del){var t=getTask(del.dataset.id);if(t&&confirm("이 과업을 삭제할까요?\n\n"+t.what)){
-      state.tasks.forEach(function(x){if((x.parent||null)===t.id)x.parent=null;});
-      state.tasks=state.tasks.filter(function(x){return x.id!==t.id;});renumberAll();saveLocal();render();}return;}
+      state.tasks.forEach(function(x){if((x.parent||null)===t.id){x.parent=null;touch(x);}});
+      t._del=true;touch(t);renumberAll();saveLocal();render();}return;}
     var seg=e.target.closest(".seg");
     if(seg){var pg=seg.closest(".prog");var ts=pg&&getTask(pg.dataset.id);if(ts){
       var nv=(+seg.dataset.i+1)*20;if(ts.wedPct===nv)nv-=20;ts.wedPct=nv;
-      if(nv===100)ts.friStatus="완료";else if(ts.friStatus==="완료")ts.friStatus="진행중";saveLocal();render();}return;}
+      if(nv===100)ts.friStatus="완료";else if(ts.friStatus==="완료")ts.friStatus="진행중";touch(ts);saveLocal();render();}return;}
     var oc=e.target.closest(".ochip");
     if(oc){var to=getTask(oc.dataset.id);if(!to)return;
       var list=ownerList();var oi=list.indexOf(to.owner);if(oi<0)oi=0;
-      to.owner=list[(oi+1)%list.length];saveLocal();render();return;}
+      to.owner=list[(oi+1)%list.length];touch(to);saveLocal();render();return;}
     var chip=e.target.closest(".chip");
     if(chip){var tt=getTask(chip.dataset.id);if(!tt)return;
       var idx=STATUS.map(function(s){return s.k;}).indexOf(tt.friStatus);
-      tt.friStatus=STATUS[(idx+1)%STATUS.length].k;saveLocal();render();}
+      tt.friStatus=STATUS[(idx+1)%STATUS.length].k;touch(tt);saveLocal();render();}
   });
 
   // ----- drag & drop reorder -----
@@ -305,7 +338,7 @@
       var groupId=(tgt.parent||null)!=null?tgt.parent:tgt.id;   // 깊이 1단계로 고정
       if(groupId===srcId)return;
       if(childrenOf(srcId).length>0){alert("하위 과업이 있는 항목은 그룹에 넣을 수 없습니다.\n먼저 하위 과업을 분리해 주세요.");return;}
-      src.parent=groupId;src.pri=9999;
+      src.parent=groupId;src.pri=9999;touch(src);
     }else{
       var newParent=tgt.parent||null;
       if(newParent===srcId)return;
@@ -314,7 +347,7 @@
       var sibs=childrenOf(newParent).filter(function(x){return x.id!==srcId;}).map(function(x){return x.id;});
       var ti=sibs.indexOf(tgtId);
       if(ti<0)sibs.push(srcId);else sibs.splice(mode==="before"?ti:ti+1,0,srcId);
-      sibs.forEach(function(id,i){var x=getTask(id);if(x)x.pri=i+1;});
+      sibs.forEach(function(id,i){var x=getTask(id);if(x){x.pri=i+1;touch(x);}});
     }
     renumberAll();saveLocal();render();
   }
@@ -344,9 +377,9 @@
   document.getElementById("mAdd").addEventListener("click",function(){
     var p=parseTask(document.getElementById("taskInput").value);
     if(!p.what){alert("(무엇을) 항목은 반드시 입력해 주세요.");return;}
-    var maxp=state.tasks.reduce(function(m,t){return Math.max(m,t.pri||0);},0);
+    var maxp=state.tasks.reduce(function(m,t){return t._del?m:Math.max(m,t.pri||0);},0);
     state.tasks.push({id:"t"+Date.now(),parent:null,pri:maxp+1,what:p.what,asis:p.problem||"",tobe:p.how||"",owner:p.owner||"—",due:p.due||"—",
-      wedPct:null,wedNote:"—",friStatus:"진행중",friNote:p.note||"—"});
+      wedPct:null,wedNote:"—",friStatus:"진행중",friNote:p.note||"—",_v:Date.now()});
     saveLocal();closeModal();render();
   });
 
@@ -355,8 +388,8 @@
   // ----- editable title / part -----
   var docTitle=document.getElementById("docTitle"),docPart=document.getElementById("docPart");
   docTitle.textContent=state.title;docPart.textContent=state.part;
-  docTitle.addEventListener("input",function(){if(readOnly)return;state.title=docTitle.textContent.trim();saveLocal();});
-  docPart.addEventListener("input",function(){if(readOnly)return;state.part=docPart.textContent.trim();saveLocal();});
+  docTitle.addEventListener("input",function(){if(readOnly)return;state.title=docTitle.textContent.trim();state._mv=Date.now();saveLocal();});
+  docPart.addEventListener("input",function(){if(readOnly)return;state.part=docPart.textContent.trim();state._mv=Date.now();saveLocal();});
   document.getElementById("weekSel").addEventListener("change",function(e){switchWeek(e.target.value);});
   document.getElementById("newWeekBtn").addEventListener("click",startNewWeek);
 
@@ -369,6 +402,8 @@
   });
 
   document.addEventListener("keydown",function(e){if(e.key==="Escape")closeModal();});
+  // a remote change that arrived while the user was typing is applied once they leave the field
+  document.addEventListener("focusout",function(){setTimeout(function(){if(pendingRender&&!isEditing())render();},0);});
 
   // ----- dark mode -----
   function applyTheme(d){document.body.classList.toggle("dark",d);

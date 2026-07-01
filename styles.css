@@ -23,6 +23,8 @@ body{font-family:var(--body);color:var(--ink);background:var(--paper);
 .ms{font-family:'Material Symbols Outlined';font-style:normal;line-height:1;
   letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;direction:ltr;
   font-feature-settings:'liga';font-variation-settings:'FILL' 0,'wght' 100,'GRAD' 0,'opsz' 24;}
+/* keep icon ligatures & decorative bits out of text copied from the sheet — copy stays clean */
+.ms,.seg,.en,.selcar,.sign,.plk,.saveind{-webkit-user-select:none;user-select:none;}
 
 header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:1rem;
   padding-bottom:.2rem;}
@@ -97,8 +99,9 @@ body.dark .row.grp-6{background:#1d2113;}
 .pri.sub{display:flex;align-items:center;justify-content:flex-start;color:var(--faint);}
 .pri.sub .ms{font-size:1.2rem;}
 .pri{font-family:var(--dot);font-size:1.5rem;font-weight:900;color:var(--red);line-height:1;}
-.what{font-family:var(--disp);font-size:1.2rem;font-weight:500;letter-spacing:-.005em;line-height:1.3;white-space:nowrap;}
-.why{font-size:1.0rem;color:var(--ink);line-height:1.5;}
+.what{font-family:var(--disp);font-size:1.2rem;font-weight:500;letter-spacing:-.005em;line-height:1.3;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis;}
+/* min-width:0 lets these 1fr cells shrink inside minmax(0,1fr); wrap long words instead of pushing the right columns off-screen */
+.why{font-size:1.0rem;color:var(--ink);line-height:1.5;min-width:0;overflow-wrap:anywhere;}
 .purpose{display:flex;flex-direction:column;gap:.4rem;}
 .pl{display:flex;align-items:baseline;gap:.6rem;line-height:1.4;}
 .plk{font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.08em;min-width:3.4rem;flex:none;}
@@ -116,7 +119,7 @@ body.dark .row.grp-6{background:#1d2113;}
   border:1.5px solid var(--ink);height:2.5rem;padding:0 .5rem;outline:none;cursor:pointer;width:100%;box-sizing:border-box;}
 .fdate:hover,.fdate:focus{border-color:var(--ink);}
 body.dark .fdate::-webkit-calendar-picker-indicator{filter:invert(1) brightness(1.2);}
-.note{font-size:1.0rem;color:var(--ink);line-height:1.45;}
+.note{font-size:1.0rem;color:var(--ink);line-height:1.45;min-width:0;overflow-wrap:anywhere;}
 [contenteditable]{outline:none;}
 [contenteditable]:hover{background:#f6f6f6;}
 [contenteditable]:focus{background:#fff;box-shadow:inset 0 -2px 0 var(--red);}
