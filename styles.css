@@ -163,6 +163,7 @@ body.dark .ochip:hover{filter:brightness(1.14);}
 .chip.done{background:var(--ink);color:var(--paper);border-color:var(--ink);}
 .chip.hold{color:var(--red);border-color:var(--red);}
 .chip.carry{color:var(--mut);}
+.chip.wait{color:var(--mut);border-color:var(--line2);}
 
 .modal{position:fixed;inset:0;background:rgba(10,10,10,.45);display:grid;place-items:center;z-index:50;}
 .modal[hidden]{display:none;}

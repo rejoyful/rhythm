@@ -162,7 +162,8 @@
     {k:"진행중",icon:"radio_button_unchecked",cls:""},
     {k:"완료",icon:"check_circle",cls:"done"},
     {k:"보류",icon:"pause_circle",cls:"hold"},
-    {k:"이월",icon:"arrow_circle_right",cls:"carry"}
+    {k:"이월",icon:"arrow_circle_right",cls:"carry"},
+    {k:"대기",icon:"pending",cls:"wait"}
   ];
   function statusObj(k){for(var i=0;i<STATUS.length;i++)if(STATUS[i].k===k)return STATUS[i];return STATUS[0];}
   function esc(s){return String(s).replace(/[&<>]/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[m];});}
