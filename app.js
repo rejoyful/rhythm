@@ -306,18 +306,32 @@
   // ----- multi-line bullet editing (keeps newlines; Enter starts/continues a bullet list) -----
   function placeCaretEnd(el){el.focus();var r=document.createRange();r.selectNodeContents(el);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}
   function bulletLines(txt){return txt.split("\n").map(function(l){l=l.replace(/^\s*•\s*/,"");return l.trim()?"• "+l:l;});}
+  // insert a REAL newline text node at the caret (execCommand("insertText","\n") is unreliable in
+  // Chrome — it often drops the break, so the newline never reaches innerText/state and vanishes on
+  // the next render). white-space:pre-wrap makes the "\n" show as a line break; innerText reads it back.
+  function insertAtCaret(el,text){
+    el.focus();var sel=window.getSelection();var range;
+    if(sel.rangeCount&&el.contains(sel.anchorNode)){range=sel.getRangeAt(0);}
+    else{range=document.createRange();range.selectNodeContents(el);range.collapse(false);}
+    range.deleteContents();
+    var node=document.createTextNode(text);
+    range.insertNode(node);
+    range.setStartAfter(node);range.setEndAfter(node);
+    sel.removeAllRanges();sel.addRange(range);
+    el.dispatchEvent(new Event("input",{bubbles:true}));
+  }
   tb.addEventListener("keydown",function(e){
     if(e.key!=="Enter"||readOnly)return;
     var el=e.target;if(!el||!el.isContentEditable)return;
     if(el.classList.contains("why")||el.classList.contains("note")){   // multi-line content fields
       e.preventDefault();
-      if(e.shiftKey){document.execCommand("insertText",false,"\n");return;}   // plain line break
+      if(e.shiftKey){insertAtCaret(el,"\n");return;}                    // plain line break
       var txt=el.innerText;
-      if(txt.indexOf("•")===-1){                                   // first Enter → bullet every line
+      if(txt.indexOf("•")===-1&&txt.trim()){                           // first Enter → bullet every line
         var lines=bulletLines(txt);lines.push("• ");
         el.innerText=lines.join("\n");placeCaretEnd(el);
         el.dispatchEvent(new Event("input",{bubbles:true}));
-      }else{document.execCommand("insertText",false,"\n• ");}      // already a list → new bullet at cursor
+      }else{insertAtCaret(el,txt.trim()?"\n• ":"• ");}                 // add a bullet at the caret
       return;
     }
     e.preventDefault();el.blur();   // title / number cells: Enter commits, no newline
