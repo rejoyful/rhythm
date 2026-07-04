@@ -271,7 +271,7 @@
       else{var n=Math.max(0,Math.min(100,parseInt(raw,10)));t.wedPct=n;if(box)box.querySelector(".bar").innerHTML=segHtml(n);}
       if(t.wedPct===100)t.friStatus="완료";else if(t.friStatus==="완료")t.friStatus="진행중";}
     else if(f==="pri"){var p=parseInt(el.textContent.replace(/[^0-9]/g,""),10);if(!isNaN(p))t.pri=p;}
-    else t[f]=el.textContent;
+    else t[f]=el.innerText;
     touch(t);saveLocal();
   });
   tb.addEventListener("focusout",function(e){
@@ -301,6 +301,26 @@
     if(chip){var tt=getTask(chip.dataset.id);if(!tt)return;
       var idx=STATUS.map(function(s){return s.k;}).indexOf(tt.friStatus);
       tt.friStatus=STATUS[(idx+1)%STATUS.length].k;touch(tt);saveLocal();render();}
+  });
+
+  // ----- multi-line bullet editing (keeps newlines; Enter starts/continues a bullet list) -----
+  function placeCaretEnd(el){el.focus();var r=document.createRange();r.selectNodeContents(el);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}
+  function bulletLines(txt){return txt.split("\n").map(function(l){l=l.replace(/^\s*•\s*/,"");return l.trim()?"• "+l:l;});}
+  tb.addEventListener("keydown",function(e){
+    if(e.key!=="Enter"||readOnly)return;
+    var el=e.target;if(!el||!el.isContentEditable)return;
+    if(el.classList.contains("why")||el.classList.contains("note")){   // multi-line content fields
+      e.preventDefault();
+      if(e.shiftKey){document.execCommand("insertText",false,"\n");return;}   // plain line break
+      var txt=el.innerText;
+      if(txt.indexOf("•")===-1){                                   // first Enter → bullet every line
+        var lines=bulletLines(txt);lines.push("• ");
+        el.innerText=lines.join("\n");placeCaretEnd(el);
+        el.dispatchEvent(new Event("input",{bubbles:true}));
+      }else{document.execCommand("insertText",false,"\n• ");}      // already a list → new bullet at cursor
+      return;
+    }
+    e.preventDefault();el.blur();   // title / number cells: Enter commits, no newline
   });
 
   // ----- drag & drop reorder -----
@@ -391,6 +411,7 @@
   docTitle.textContent=state.title;docPart.textContent=state.part;
   docTitle.addEventListener("input",function(){if(readOnly)return;state.title=docTitle.textContent.trim();state._mv=Date.now();saveLocal();});
   docPart.addEventListener("input",function(){if(readOnly)return;state.part=docPart.textContent.trim();state._mv=Date.now();saveLocal();});
+  [docTitle,docPart].forEach(function(el){el.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();el.blur();}});});
   document.getElementById("weekSel").addEventListener("change",function(e){switchWeek(e.target.value);});
   document.getElementById("newWeekBtn").addEventListener("click",startNewWeek);
 
