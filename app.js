@@ -210,6 +210,20 @@
     pids.forEach(function(pid){childrenOf(pid).forEach(function(t,i){if(t.pri!==i+1){t.pri=i+1;touch(t);}});});
   }
 
+  // A top-level task that has children renders as a PROJECT: the parent is a header (name only,
+  // its own day-fields stay in the data but are hidden), the children are the project's HISTORY
+  // (shown the same way on Mon/Wed/Fri: status + what + owner + date).
+  function projectHeaderCells(t){
+    return '<div class="pri"'+CE()+' data-field="pri" data-id="'+t.id+'">'+pad(t.pri)+'</div>'
+      +'<div class="phead"><div class="what"'+CE()+' data-field="what" data-id="'+t.id+'" title="'+escAttr(t.what)+'">'+esc(t.what)+'</div>'
+      +(EDITABLE?'<button class="addhist" data-id="'+t.id+'" title="히스토리 추가"><span class="ms">add</span>히스토리</button>':'')+'</div>'
+      +ownerCell(t)+dueCell(t);
+  }
+  function historyCells(t){
+    return '<div class="pri sub" data-id="'+t.id+'"><span class="ms">subdirectory_arrow_right</span></div>'
+      +chipCell(t)+ed("what",t.id,t.what||"","note histwhat","한 일")+ownerCell(t)+dueCell(t);
+  }
+
   function render(){
     EDITABLE=!readOnly;
     document.getElementById("today").textContent=fmtToday(new Date());
@@ -237,20 +251,23 @@
     tb.dataset.day=curDay;
     tb.style.gridTemplateRows="repeat("+Math.max(order.length,1)+",minmax(min-content,1fr))";
     tb.innerHTML=order.map(function(o){
-      var t=o.t,depth=o.depth,cells;
-      var priCell=depth>0
-        ? '<div class="pri sub" data-id="'+t.id+'"><span class="ms">subdirectory_arrow_right</span></div>'
-        : '<div class="pri"'+CE()+' data-field="pri" data-id="'+t.id+'">'+pad(t.pri)+'</div>';
-      var sp='<div class="sp"></div>';
-      if(curDay==="mon"){cells=
-        priCell+edWhat(t)+sp+ed("asis",t.id,t.asis||"","why","AS-IS")+ed("tobe",t.id,t.tobe||"","why","TO-BE")+ownerCell(t)+dueCell(t);
-      }else if(curDay==="wed"){cells=
-        priCell+edWhat(t)+sp+ed("wedNote",t.id,t.wedNote,"note","병목 · 변수")+progCell(t)+ownerCell(t)+dueCell(t);
-      }else{cells=
-        priCell+edWhat(t)+sp+ed("friNote",t.id,t.friNote,"note","이월 · 수정")+chipCell(t)+ownerCell(t)+dueCell(t);
+      var t=o.t,depth=o.depth,cells,gridCols,extra="";
+      var isProject=depth===0&&childrenOf(t.id).length>0;   // has children → project header
+      var isHistory=depth>0;                                 // child → history entry
+      if(isProject){
+        cells=projectHeaderCells(t);gridCols="4.2rem minmax(0,1fr) 9rem 10rem";extra=" project";
+      }else if(isHistory){
+        cells=historyCells(t);gridCols="4.2rem auto minmax(0,1fr) 9rem 10rem";extra=" history child";
+      }else{
+        var priCell='<div class="pri"'+CE()+' data-field="pri" data-id="'+t.id+'">'+pad(t.pri)+'</div>';
+        var sp='<div class="sp"></div>';
+        if(curDay==="mon"){cells=priCell+edWhat(t)+sp+ed("asis",t.id,t.asis||"","why","AS-IS")+ed("tobe",t.id,t.tobe||"","why","TO-BE")+ownerCell(t)+dueCell(t);}
+        else if(curDay==="wed"){cells=priCell+edWhat(t)+sp+ed("wedNote",t.id,t.wedNote,"note","병목 · 변수")+progCell(t)+ownerCell(t)+dueCell(t);}
+        else{cells=priCell+edWhat(t)+sp+ed("friNote",t.id,t.friNote,"note","이월 · 수정")+chipCell(t)+ownerCell(t)+dueCell(t);}
+        gridCols=GRID[curDay];
       }
-      var done=(curDay==="fri"&&/완료/.test(t.friStatus))||(curDay==="wed"&&t.wedPct===100);
-      return '<div class="row'+(done?" done":"")+(depth>0?" child":"")+(o.grp!=null?" grp-"+o.grp:"")+'" data-id="'+t.id+'" style="grid-template-columns:'+GRID[curDay]+'">'+
+      var done=isProject?false:(isHistory?/완료/.test(t.friStatus):((curDay==="fri"&&/완료/.test(t.friStatus))||(curDay==="wed"&&t.wedPct===100)));
+      return '<div class="row'+(done?" done":"")+extra+(o.grp!=null?" grp-"+o.grp:"")+'" data-id="'+t.id+'" style="grid-template-columns:'+gridCols+'">'+
         (EDITABLE?'<span class="dragh" data-id="'+t.id+'" aria-label="순서 이동"><span class="ms">drag_indicator</span></span>':'')+
         cells+
         (EDITABLE?'<button class="del" data-id="'+t.id+'" aria-label="삭제"><span class="ms">delete</span></button>':'')+'</div>';
@@ -285,6 +302,13 @@
   });
   tb.addEventListener("click",function(e){
     if(readOnly)return;
+    var ah=e.target.closest(".addhist");
+    if(ah){var pp=getTask(ah.dataset.id);if(pp){
+      var mp=childrenOf(pp.id).reduce(function(m,x){return Math.max(m,x.pri||0);},0);
+      var nt={id:"t"+Date.now(),parent:pp.id,pri:mp+1,what:"",asis:"",tobe:"",owner:"—",due:"—",wedPct:null,wedNote:"—",friStatus:"진행중",friNote:"—",_v:Date.now()};
+      state.tasks.push(nt);touch(pp);saveLocal();render();
+      setTimeout(function(){var el=document.querySelector('.row[data-id="'+nt.id+'"] [data-field="what"]');if(el)el.focus();},30);
+    }return;}
     var del=e.target.closest(".del");
     if(del){var t=getTask(del.dataset.id);if(t&&confirm("이 과업을 삭제할까요?\n\n"+t.what)){
       state.tasks.forEach(function(x){if((x.parent||null)===t.id){x.parent=null;touch(x);}});

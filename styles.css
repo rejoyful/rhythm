@@ -96,6 +96,19 @@ body.dark .row.grp-0{background:#141b27;}body.dark .row.grp-1{background:#102120
 body.dark .row.grp-3{background:#211d11;}body.dark .row.grp-4{background:#231a12;}body.dark .row.grp-5{background:#221520;}
 body.dark .row.grp-6{background:#1d2113;}
 .row.child .what{padding-left:1.5rem;}
+/* ---- Project header (top-level task with children) — same on Mon/Wed/Fri ---- */
+.row.project{align-items:center;}
+.row.project .pri{font-size:1.55rem;}
+.phead{display:flex;align-items:center;gap:.9rem;min-width:0;}
+.phead .what{font-family:var(--disp);font-size:1.35rem;font-weight:700;letter-spacing:-.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto;line-height:1.25;}
+.addhist{flex:none;display:inline-flex;align-items:center;gap:.2rem;font-family:var(--body);font-size:.76rem;font-weight:700;
+  color:var(--mut);background:transparent;border:1.5px solid var(--line2);padding:.24rem .55rem;cursor:pointer;white-space:nowrap;}
+.addhist:hover{border-color:var(--ink);color:var(--ink);}
+.addhist .ms{font-size:1rem;}
+/* ---- History entry (child) — the project's timeline, same on Mon/Wed/Fri ---- */
+.row.history{align-items:center;}
+.history .histwhat{font-size:.98rem;}
 .pri.sub{display:flex;align-items:center;justify-content:flex-start;color:var(--faint);}
 .pri.sub .ms{font-size:1.2rem;}
 .pri{font-family:var(--dot);font-size:1.5rem;font-weight:900;color:var(--red);line-height:1;}
@@ -245,6 +258,21 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .modal{align-items:flex-end;}
   .modal-card{width:100%;max-width:100%;max-height:88dvh;border-left:none;border-right:none;border-bottom:none;}
   #taskInput{height:9rem;}
+
+  /* ---- Project header card (mobile): name + owner/date, same on all tabs ---- */
+  .row.project{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;column-gap:.6rem;row-gap:.5rem;align-items:center;padding:.85rem;}
+  .row.project .pri{grid-column:1;grid-row:1;justify-self:start;align-self:center;font-size:1.35rem;}
+  .row.project .phead{grid-column:1 / -1;grid-row:1;padding-left:2rem;flex-wrap:wrap;gap:.5rem;}
+  .row.project .phead .what{white-space:normal;font-size:1.18rem;overflow:visible;text-overflow:clip;}
+  .row.project .ochip{grid-column:1;grid-row:2;justify-self:stretch;align-self:center;min-width:0;}
+  .row.project .duec{grid-column:2;grid-row:2;justify-self:stretch;align-self:center;min-width:0;}
+  /* ---- History card (mobile): status + content, then owner/date ---- */
+  .row.history{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;column-gap:.6rem;row-gap:.45rem;align-items:center;padding:.85rem;}
+  .row.history .pri{display:none;}   /* hide ↳ on mobile; tint + "한 일" label already convey it */
+  .row.history .histwhat{grid-column:1 / -1;grid-row:1;}
+  .row.history .chip{grid-column:1 / -1;grid-row:2;justify-self:start;}
+  .row.history .ochip{grid-column:1;grid-row:3;justify-self:stretch;align-self:center;min-width:0;}
+  .row.history .duec{grid-column:2;grid-row:3;justify-self:stretch;align-self:center;min-width:0;}
 }
 
 @media (max-width:479px){
