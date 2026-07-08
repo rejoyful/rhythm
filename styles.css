@@ -143,6 +143,9 @@ body.dark .fdate::-webkit-calendar-picker-indicator{filter:invert(1) brightness(
 .chip .ms,.ochip .ms{font-size:1.1rem;}
 .chip:hover{background:#f4f4f4;}
 .ochip:hover{filter:brightness(.95);}
+.ochip .oname{display:inline-flex;align-items:center;gap:.45rem;}   /* full name — desktop table */
+.ochip .oini{display:none;}                                         /* initial avatar — mobile only */
+.ddisp{display:none;}                                               /* short date label — mobile only */
 .ochip.o0{background:var(--paper);color:var(--mut);border-color:var(--line2);}
 .ochip.o1{background:#dde8f7;color:#1f4576;border-color:#a9c4e6;}
 .ochip.o2{background:#e1f0d6;color:#345c1d;border-color:#bcdca6;}
@@ -218,22 +221,40 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row.swiping{transition:none;z-index:3;}
   .row.willdel::after{background:#b3141b;}
 
-  /* Project header row: name (+ button) on top, 담당 / 기한 below. No leading number. */
-  .row.project{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;}
+  /* Project header row: name (+ ghost) on top; a light meta line (담당 · 기한) below, packed left. */
+  .row.project{grid-template-columns:auto auto 1fr!important;}
   .row.project .pri{display:none;}
-  .row.project .phead{grid-column:1 / -1;grid-row:1;flex-wrap:wrap;gap:.4rem .55rem;}
+  .row.project .phead{grid-column:1 / -1;grid-row:1;flex-wrap:wrap;gap:.35rem .5rem;}
   .row.project .phead .what{white-space:normal;font-size:1.18rem;overflow:visible;text-overflow:clip;}
-  .row.project .addhist{width:2.1rem;height:2.1rem;}
-  .row.project .ochip{grid-column:1;grid-row:2;justify-self:stretch;align-self:center;min-width:0;}
-  .row.project .duec{grid-column:2;grid-row:2;justify-self:stretch;align-self:center;min-width:0;}
+  .row.project .addhist{width:1.9rem;height:1.9rem;border:none;color:var(--faint);}
+  .row.project .addhist:hover{color:var(--ink);}
+  .row.project .ochip{grid-column:1;grid-row:2;}
+  .row.project .duec{grid-column:2;grid-row:2;}
 
-  /* History row: flush-left, no indent. 한 일 on top; 상태 · 담당 · 기한 share one line below. */
-  .row.history{grid-template-columns:repeat(3,minmax(0,1fr))!important;margin-left:0;}
+  /* History row: flush-left. 한 일 on top; a compact icon meta (상태 · 담당 · 기한) below, packed left. */
+  .row.history{grid-template-columns:auto auto auto 1fr!important;margin-left:0;column-gap:.5rem;}
   .row.history .pri{display:none;}
   .row.history .histwhat{grid-column:1 / -1;grid-row:1;white-space:pre-wrap;}
-  .row.history .chip{grid-column:1;grid-row:2;justify-self:stretch;align-self:center;min-width:0;justify-content:center;}
-  .row.history .ochip{grid-column:2;grid-row:2;justify-self:stretch;align-self:center;min-width:0;justify-content:center;}
-  .row.history .duec{grid-column:3;grid-row:2;justify-self:stretch;align-self:center;min-width:0;}
+  .row.history .chip{grid-column:1;grid-row:2;}
+  .row.history .ochip{grid-column:2;grid-row:2;}
+  .row.history .duec{grid-column:3;grid-row:2;}
+
+  /* --- lighten the meta so a card reads as info, not a wall of buttons --- */
+  .row .chip{height:1.9rem;min-height:1.9rem;padding:0 .5rem;font-size:.8rem;gap:.25rem;}
+  .row .chip .ms{font-size:1rem;}
+  /* 담당 → compact colored tile with initials; the full name stays in the desktop table */
+  .row .ochip{height:1.9rem;min-height:1.9rem;min-width:1.9rem;width:auto;padding:0 .4rem;justify-content:center;font-size:.8rem;}
+  .row .ochip .oname{display:none;}
+  .row .ochip .oini{display:inline-flex;align-items:center;justify-content:center;}
+  .row .ochip .oini .ms{font-size:1.05rem;}
+  /* 기한 → borderless: calendar icon + short date; the native input is a transparent tap layer on top */
+  .row .duec{position:relative;display:inline-flex;align-items:center;gap:.2rem;width:auto;min-width:0;}
+  .row .duec::before{content:"calendar_month";font-family:'Material Symbols Outlined';font-feature-settings:'liga';
+    font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;font-size:1.05rem;line-height:1;color:var(--faint);flex:none;}
+  .row .ddisp{display:inline;font-family:var(--body);font-weight:600;font-size:.8rem;color:var(--mut);white-space:nowrap;}
+  .row .duec.empty .ddisp{color:var(--faint);}
+  .row .fdate{position:absolute;inset:0;width:100%;height:100%;opacity:0;-webkit-appearance:none;appearance:none;
+    border:none;background:transparent;padding:0;margin:0;min-width:0;cursor:pointer;}
 
   .modal{align-items:flex-end;}
   .modal-card{width:100%;max-width:100%;max-height:88dvh;border-left:none;border-right:none;border-bottom:none;}
@@ -246,30 +267,9 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row{padding:.8rem;}
 }
 
-/* Phones: hide the week switcher, and make the date field behave (iOS width, icon, 미정 label). */
+/* Phones: hide the week switcher. (all card + meta styling lives in the ≤1279 block above;
+   the date is a transparent native input over a controlled short-date label, so the old iOS
+   width/overflow workarounds are no longer needed — the native field is never shown.) */
 @media (max-width:600px){
   .selwrap{display:none;}
-
-  /* history footer: 상태 · 담당 · 기한 share one narrow line — compact them, drop the date icon */
-  .row.history .chip,.row.history .ochip{font-size:.74rem;gap:.18rem;padding:0 .28rem;}
-  .row.history .chip .ms,.row.history .ochip .ms{font-size:.95rem;}
-  .row.history .fdate{font-size:.74rem;padding:0 .2rem;}
-  .row.history .duec::before{display:none;}
-
-  .row .ochip{font-size:.86rem;justify-content:center;}
-  .row .duec{position:relative;}
-  /* custom calendar icon — appearance:none strips the native one; Material Symbols, adapts to theme */
-  .row .duec::before{content:"calendar_month";font-family:'Material Symbols Outlined';font-feature-settings:'liga';
-    font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;position:absolute;top:50%;left:auto;right:.4rem;
-    transform:translateY(-50%);font-size:1.05rem;line-height:1;color:var(--mut);pointer-events:none;}
-  /* date input on phones: Korean body font (far narrower than mono); -webkit-appearance:none forces
-     iOS Safari to honor width:100%; the date-and-time-value margin reset kills iOS's built-in inset. */
-  .row .fdate{-webkit-appearance:none;appearance:none;font-family:var(--body);font-weight:600;
-    min-width:0;width:100%;max-width:100%;box-sizing:border-box;font-size:.86rem;padding:0 1.5rem;text-align:center;letter-spacing:-.02em;}
-  .row .fdate::-webkit-date-and-time-value{margin:0;text-align:center;}
-  .row .fdate::-webkit-calendar-picker-indicator{display:none;}
-  /* unset due date: paint a clear "미정" over the blank input, keep it tappable underneath */
-  .row .duec.empty .fdate{color:transparent;}
-  .row .duec.empty::after{content:"미정";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    color:var(--faint);font-family:var(--body);font-size:.86rem;pointer-events:none;}
 }

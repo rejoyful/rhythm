@@ -182,14 +182,20 @@
   }
   var ROSTER=["이해원 차장","이재현 대리","정유나 대리","UX 파트"];
   function ownerList(){return ["—"].concat(ROSTER);}
+  function ownerInitials(name){if(!name||name==="—")return "";return String(name).split(/\s+/)[0].slice(0,2);}
   function ownerCell(t){
     var label=(t.owner&&t.owner!=="—")?t.owner:"미정";
     var idx=(!t.owner||t.owner==="—")?0:(ROSTER.indexOf(t.owner)+1);if(idx<0)idx=0;
-    return '<button class="ochip o'+idx+'" data-field="owner" data-id="'+t.id+'"><span class="ms">person</span>'+esc(label)+'</button>';
+    var ini=ownerInitials(t.owner);
+    // desktop shows the full name (.oname); mobile shows a compact initial-avatar (.oini)
+    return '<button class="ochip o'+idx+'" data-field="owner" data-id="'+t.id+'" title="담당: '+escAttr(label)+'" aria-label="담당 '+escAttr(label)+'">'
+      +'<span class="oini">'+(ini?esc(ini):'<span class="ms">person</span>')+'</span>'
+      +'<span class="oname"><span class="ms">person</span>'+esc(label)+'</span></button>';
   }
   function dueToISO(d){if(!d)return"";if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d;
     var m=/^(\d{1,2})[\/.\-](\d{1,2})$/.exec(d);if(m)return new Date().getFullYear()+"-"+pad(+m[1])+"-"+pad(+m[2]);return"";}
-  function dueCell(t){var iso=dueToISO(t.due);return '<div class="duec'+(iso?"":" empty")+'" data-label="기한"><input type="date" class="fdate"'+(EDITABLE?"":" disabled")+' data-field="due" data-id="'+t.id+'" value="'+iso+'"></div>';}
+  function dueCell(t){var iso=dueToISO(t.due);var md=iso?iso.slice(5).replace("-","."):"";
+    return '<div class="duec'+(iso?"":" empty")+'" data-label="기한"><input type="date" class="fdate"'+(EDITABLE?"":" disabled")+' data-field="due" data-id="'+t.id+'" value="'+iso+'"><span class="ddisp">'+(md||"미정")+'</span></div>';}
 
   // ----- tree (group) helpers -----
   function childrenOf(pid){return state.tasks.filter(function(x){return !x._del&&(x.parent||null)===pid;}).sort(function(a,b){return(a.pri||99)-(b.pri||99);});}
@@ -263,7 +269,7 @@
   tb.addEventListener("change",function(e){
     if(readOnly)return;
     var el=e.target;if(!el.dataset||!el.dataset.field)return;var t=getTask(el.dataset.id);if(!t)return;
-    if(el.dataset.field==="due"){t.due=el.value||"—";var dc=el.closest(".duec");if(dc)dc.classList.toggle("empty",!el.value);touch(t);saveLocal();return;}
+    if(el.dataset.field==="due"){t.due=el.value||"—";var dc=el.closest(".duec");if(dc){dc.classList.toggle("empty",!el.value);var dd=dc.querySelector(".ddisp");if(dd)dd.textContent=el.value?el.value.slice(5).replace("-","."):"미정";}touch(t);saveLocal();return;}
   });
   tb.addEventListener("click",function(e){
     if(readOnly)return;
