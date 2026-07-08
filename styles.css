@@ -53,9 +53,7 @@ h1{font-family:var(--disp);font-size:2.1rem;font-weight:700;letter-spacing:-.01e
 /* tabs (nav) removed — single unified project/history view */
 
 .sheet{flex:1;display:flex;flex-direction:column;min-height:0;margin-top:1rem;}
-.thead,.row{display:grid;align-items:center;gap:1.4rem;}
-.thead{padding:0 calc(2.8rem + 8px) 1rem 2.2rem;border-bottom:2px solid var(--ink);}
-.thead .h{font-family:var(--mono);font-size:.78rem;letter-spacing:.12em;color:var(--mut);text-transform:uppercase;font-weight:700;}
+.row{display:grid;align-items:center;gap:1.4rem;}
 .tbody{flex:1;display:grid;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;
   scrollbar-width:thin;scrollbar-color:var(--line2) transparent;}
 .tbody::-webkit-scrollbar{width:8px;}
@@ -202,7 +200,6 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .today{display:none;}
 
   .sheet{flex:none;margin-top:.9rem;}
-  .thead{display:none;}
   .tbody{display:block;overflow:visible;scrollbar-gutter:auto;}
 
   /* both row types reflow to two equal columns; the header line stacks above 담당·기한 */

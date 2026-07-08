@@ -148,7 +148,6 @@
   // its children are HISTORY entries. Two column templates, no per-day variants.
   var COLS_PROJECT="4.2rem minmax(0,1fr) 9rem 10rem";        // NO | 프로젝트(+히스토리) | 담당 | 기한
   var COLS_HISTORY="4.2rem auto minmax(0,1fr) 9rem 10rem";   // ↳ | 상태 | 한 일 | 담당 | 기한
-  var HEAD=["NO","프로젝트","담당","기한"];
   var STATUS=[
     {k:"진행중",icon:"radio_button_unchecked",cls:""},
     {k:"완료",icon:"check_circle",cls:"done"},
@@ -221,9 +220,6 @@
     document.getElementById("weekLabel").textContent=(state.label||weekLabel(new Date()))+(readOnly?"  ·  보기 전용":"");
     var dtt=document.getElementById("docTitle"),dpp=document.getElementById("docPart");if(dtt)dtt.contentEditable=EDITABLE;if(dpp)dpp.contentEditable=EDITABLE;
     var ab=document.getElementById("addBtn");if(ab)ab.style.display=EDITABLE?"":"none";
-
-    var th=document.getElementById("thead");th.style.gridTemplateColumns=COLS_PROJECT;
-    th.innerHTML=HEAD.map(function(h){return '<div class="h">'+h+'</div>';}).join("");
 
     var order=buildOrder();
     var tb=document.getElementById("tbody");
