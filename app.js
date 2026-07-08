@@ -206,7 +206,7 @@
   function projectHeaderCells(t){
     return '<div class="pri"'+CE()+' data-field="pri" data-id="'+t.id+'">'+pad(t.pri)+'</div>'
       +'<div class="phead"><div class="what"'+CE()+' data-field="what" data-id="'+t.id+'" title="'+escAttr(t.what)+'">'+esc(t.what)+'</div>'
-      +(EDITABLE?'<button class="addhist" data-id="'+t.id+'" title="히스토리 추가"><span class="ms">add</span>히스토리</button>':'')+'</div>'
+      +(EDITABLE?'<button class="addhist" data-id="'+t.id+'" title="히스토리 추가" aria-label="히스토리 추가"><span class="ms">add</span></button>':'')+'</div>'
       +ownerCell(t)+dueCell(t);
   }
   function historyCells(t){
@@ -375,6 +375,51 @@
     }
     renumberAll();saveLocal();render();
   }
+
+  // ----- mobile swipe-to-delete (touch): drag a card left past the threshold to remove it -----
+  (function(){
+    var sw=null;                     // active swipe: {row,id,x0,y0,dir}
+    var THRESH=110;                  // px past which a release deletes
+    function reset(row){row.classList.remove("swiping","willdel");row.style.transition="transform .18s ease";row.style.transform="";}
+    tb.addEventListener("touchstart",function(e){
+      if(readOnly||e.touches.length!==1)return;
+      var row=e.target.closest(".row");if(!row)return;
+      sw={row:row,id:row.dataset.id,x0:e.touches[0].clientX,y0:e.touches[0].clientY,dir:0};
+      row.style.transition="";
+    },{passive:true});
+    tb.addEventListener("touchmove",function(e){
+      if(!sw)return;
+      var dx=e.touches[0].clientX-sw.x0,dy=e.touches[0].clientY-sw.y0;
+      if(sw.dir===0){
+        if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
+        sw.dir=Math.abs(dx)>Math.abs(dy)?"h":"v";
+        if(sw.dir==="v"){sw=null;return;}          // vertical intent → let the list scroll
+        sw.row.classList.add("swiping");
+      }
+      e.preventDefault();                           // horizontal: block scroll, follow the finger
+      var t=Math.max(-window.innerWidth*0.9,Math.min(0,dx));
+      sw.row.style.transform="translateX("+t+"px)";
+      sw.row.classList.toggle("willdel",t<=-THRESH);
+    },{passive:false});
+    tb.addEventListener("touchend",function(e){
+      if(!sw)return;
+      var s=sw;sw=null;
+      var dx=e.changedTouches[0].clientX-s.x0;
+      if(s.dir==="h"&&dx<=-THRESH){
+        var t=getTask(s.id);
+        if(t&&confirm("이 항목을 삭제할까요?\n\n"+(t.what||""))){
+          s.row.style.transition="transform .18s ease";s.row.style.transform="translateX(-100%)";
+          setTimeout(function(){
+            state.tasks.forEach(function(x){if((x.parent||null)===t.id){x.parent=null;touch(x);}});
+            t._del=true;touch(t);renumberAll();saveLocal();render();
+          },170);
+          return;
+        }
+      }
+      reset(s.row);
+    },{passive:true});
+    tb.addEventListener("touchcancel",function(){if(sw){reset(sw.row);sw=null;}},{passive:true});
+  })();
 
   // ----- add project modal -----
   var TPL="프로젝트명 : \n담당 : \n기한(월/일) : ";

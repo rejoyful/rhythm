@@ -83,10 +83,10 @@ body.dark .row.history{background:#181818;}
 .phead{display:flex;align-items:center;gap:.9rem;min-width:0;}
 .phead .what{font-family:var(--disp);font-size:1.35rem;font-weight:700;letter-spacing:-.01em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto;line-height:1.25;}
-.addhist{flex:none;display:inline-flex;align-items:center;gap:.2rem;font-family:var(--body);font-size:.76rem;font-weight:700;
-  color:var(--mut);background:transparent;border:1.5px solid var(--line2);padding:.24rem .55rem;cursor:pointer;white-space:nowrap;}
+.addhist{flex:none;display:inline-grid;place-items:center;width:1.7rem;height:1.7rem;
+  color:var(--mut);background:transparent;border:1.5px solid var(--line2);cursor:pointer;}
 .addhist:hover{border-color:var(--ink);color:var(--ink);}
-.addhist .ms{font-size:1rem;}
+.addhist .ms{font-size:1.15rem;}
 /* ---- History entry (child) — the project's timeline, same on Mon/Wed/Fri ---- */
 .row.history{align-items:center;}
 .history .histwhat{font-size:.98rem;}
@@ -202,32 +202,38 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .sheet{flex:none;margin-top:.9rem;}
   .tbody{display:block;overflow:visible;scrollbar-gutter:auto;border-top:none;}
 
-  /* both row types reflow to two equal columns; the header line stacks above 담당·기한 */
-  .row{position:relative;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
-    column-gap:.6rem;row-gap:.55rem;align-items:center;
-    padding:.9rem 1rem;border:1.5px solid var(--line2);margin-bottom:.6rem;}
-  .row:last-child{border-bottom:1.5px solid var(--line2);}
+  /* Continuous list (like the desktop table): flush-left rows, no card boxes/indent, no leading
+     numbers. A project + its history read as one attached block — white header, grey history rows. */
+  .row{position:relative;overflow:visible;column-gap:.55rem;row-gap:.5rem;align-items:center;
+    padding:.8rem 1rem;border:none;border-bottom:1px solid var(--line);margin:0;}
   .row .dragh{display:none!important;}
-  .row .del{position:absolute!important;display:grid!important;top:.5rem;right:.5rem;left:auto;bottom:auto;
-    transform:none;justify-self:auto;grid-column:auto;grid-row:auto;width:1.95rem;height:1.95rem;z-index:2;}
+  .row .del{display:none!important;}                 /* mobile deletes via swipe, not a button */
   .iconbtn{width:2.7rem;height:2.7rem;}
   .chip,.ochip,.fdate{min-height:44px;}
 
-  /* Project header card: NO + name(+히스토리) on top, 담당 / 기한 below */
-  .row.project .pri{grid-column:1;grid-row:1;justify-self:start;align-self:center;font-size:1.3rem;}
-  .row.project .phead{grid-column:1 / -1;grid-row:1;padding-left:2rem;padding-right:2.4rem;flex-wrap:wrap;gap:.35rem .55rem;}
-  .row.project .phead .what{white-space:normal;font-size:1.15rem;overflow:visible;text-overflow:clip;}
-  .row.project .addhist{padding:.35rem .6rem;}
+  /* swipe-to-delete: a red zone sits just off the right edge, revealed as the card slides left */
+  .row.swiping::after{content:"delete";font-family:'Material Symbols Outlined';font-feature-settings:'liga';
+    font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;position:absolute;top:0;bottom:0;left:100%;width:100%;
+    display:flex;align-items:center;justify-content:flex-start;padding-left:1.5rem;background:var(--red);color:#fff;font-size:1.5rem;pointer-events:none;}
+  .row.swiping{transition:none;z-index:3;}
+  .row.willdel::after{background:#b3141b;}
+
+  /* Project header row: name (+ button) on top, 담당 / 기한 below. No leading number. */
+  .row.project{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;}
+  .row.project .pri{display:none;}
+  .row.project .phead{grid-column:1 / -1;grid-row:1;flex-wrap:wrap;gap:.4rem .55rem;}
+  .row.project .phead .what{white-space:normal;font-size:1.18rem;overflow:visible;text-overflow:clip;}
+  .row.project .addhist{width:2.1rem;height:2.1rem;}
   .row.project .ochip{grid-column:1;grid-row:2;justify-self:stretch;align-self:center;min-width:0;}
   .row.project .duec{grid-column:2;grid-row:2;justify-self:stretch;align-self:center;min-width:0;}
 
-  /* History card: indented + grey, status + 한 일 on top, 담당 / 기한 below */
-  .row.history{margin-left:1rem;}
+  /* History row: flush-left, no indent. 한 일 on top; 상태 · 담당 · 기한 share one line below. */
+  .row.history{grid-template-columns:repeat(3,minmax(0,1fr))!important;margin-left:0;}
   .row.history .pri{display:none;}
-  .row.history .histwhat{grid-column:1 / -1;grid-row:1;padding-right:2.4rem;white-space:pre-wrap;}
-  .row.history .chip{grid-column:1 / -1;grid-row:2;justify-self:start;}
-  .row.history .ochip{grid-column:1;grid-row:3;justify-self:stretch;align-self:center;min-width:0;}
-  .row.history .duec{grid-column:2;grid-row:3;justify-self:stretch;align-self:center;min-width:0;}
+  .row.history .histwhat{grid-column:1 / -1;grid-row:1;white-space:pre-wrap;}
+  .row.history .chip{grid-column:1;grid-row:2;justify-self:stretch;align-self:center;min-width:0;justify-content:center;}
+  .row.history .ochip{grid-column:2;grid-row:2;justify-self:stretch;align-self:center;min-width:0;justify-content:center;}
+  .row.history .duec{grid-column:3;grid-row:2;justify-self:stretch;align-self:center;min-width:0;}
 
   .modal{align-items:flex-end;}
   .modal-card{width:100%;max-width:100%;max-height:88dvh;border-left:none;border-right:none;border-bottom:none;}
@@ -237,13 +243,18 @@ body.dark .ochip:hover{filter:brightness(1.14);}
 @media (max-width:479px){
   h1{font-size:1.4rem;}
   .part{font-size:.9rem;}
-  .row{padding:.85rem;}
-  .row.history{margin-left:.6rem;}
+  .row{padding:.8rem;}
 }
 
 /* Phones: hide the week switcher, and make the date field behave (iOS width, icon, 미정 label). */
 @media (max-width:600px){
   .selwrap{display:none;}
+
+  /* history footer: 상태 · 담당 · 기한 share one narrow line — compact them, drop the date icon */
+  .row.history .chip,.row.history .ochip{font-size:.74rem;gap:.18rem;padding:0 .28rem;}
+  .row.history .chip .ms,.row.history .ochip .ms{font-size:.95rem;}
+  .row.history .fdate{font-size:.74rem;padding:0 .2rem;}
+  .row.history .duec::before{display:none;}
 
   .row .ochip{font-size:.86rem;justify-content:center;}
   .row .duec{position:relative;}
