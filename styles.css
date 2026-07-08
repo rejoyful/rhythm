@@ -10,8 +10,6 @@ body.dark{--ink:#f2f2f2;--paper:#0d0d0d;--mut:#9a9a9a;--faint:#666;--line:#26262
 body.dark nav button:hover,body.dark .chip:hover,body.dark .fsel:hover{background:#1a1a1a;}
 body.dark .chip.done{background:#f2f2f2;color:#0d0d0d;border-color:#f2f2f2;}
 body.dark .chip.done:hover{background:#e0e0e0;color:#0d0d0d;}
-body.dark nav button.active,body.dark nav button.active:hover{background:#f2f2f2;color:#0d0d0d;}
-body.dark nav button.active .en{color:#777;}
 body.dark [contenteditable]:hover{background:#1a1a1a;}
 body.dark [contenteditable]:focus{background:#151515;}
 body.dark .row.done .pri{color:#444;}
@@ -52,15 +50,7 @@ h1{font-family:var(--disp);font-size:2.1rem;font-weight:700;letter-spacing:-.01e
 .saveind.on{opacity:1;}
 .saveind .ms{font-size:.95rem;color:var(--red);}
 
-nav{display:flex;margin-top:1.2rem;border:1.5px solid var(--ink);}
-nav button{flex:1;display:flex;align-items:baseline;justify-content:center;gap:.7rem;
-  font-family:var(--body);font-size:1.05rem;font-weight:700;color:var(--mut);background:var(--paper);
-  border:none;border-right:1.5px solid var(--ink);padding:.7rem 0;cursor:pointer;transition:all .14s;}
-nav button:last-child{border-right:none;}
-nav button .en{font-family:var(--mono);font-size:.78rem;letter-spacing:.16em;color:var(--faint);font-weight:700;}
-nav button:hover{background:#f4f4f4;}
-nav button.active{background:var(--ink);color:var(--paper);}
-nav button.active .en{color:#bdbdbd;}
+/* tabs (nav) removed — single unified project/history view */
 
 .sheet{flex:1;display:flex;flex-direction:column;min-height:0;margin-top:1rem;}
 .thead,.row{display:grid;align-items:center;gap:1.4rem;}
@@ -85,17 +75,10 @@ body.dragging-active .dragh{cursor:grabbing;}
 .row.dropbefore{box-shadow:inset 0 3px 0 var(--red);}
 .row.dropafter{box-shadow:inset 0 -3px 0 var(--red);}
 .row.dropnest{box-shadow:inset 0 0 0 2px var(--red);background:rgba(215,25,33,.05);}
-/* Project groups — a parent task + its children share ONE faint brand tint so the whole
-   group reads as a single block. The colour index (grp-0..6) is assigned per group in
-   app.js (stable hash of the group id, neighbours forced to differ). Replaces the old
-   neutral child shading. Works the same for the desktop table rows and the mobile cards. */
-.row.grp-0{background:#eef3fb;}.row.grp-1{background:#e8f5f2;}.row.grp-2{background:#eff6ea;}
-.row.grp-3{background:#faf4e6;}.row.grp-4{background:#fcf0e7;}.row.grp-5{background:#fcedf1;}
-.row.grp-6{background:#f1f5e6;}
-body.dark .row.grp-0{background:#141b27;}body.dark .row.grp-1{background:#102120;}body.dark .row.grp-2{background:#152017;}
-body.dark .row.grp-3{background:#211d11;}body.dark .row.grp-4{background:#231a12;}body.dark .row.grp-5{background:#221520;}
-body.dark .row.grp-6{background:#1d2113;}
-.row.child .what{padding-left:1.5rem;}
+/* History entries (children) get ONE faint neutral grey so a project's timeline reads as an
+   indented sub-block. Top-level PROJECT rows stay on the plain paper — no colour. */
+.row.history{background:#f5f5f5;}
+body.dark .row.history{background:#181818;}
 /* ---- Project header (top-level task with children) — same on Mon/Wed/Fri ---- */
 .row.project{align-items:center;}
 .row.project .pri{font-size:1.55rem;}
@@ -198,9 +181,9 @@ body.dark .ochip:hover{filter:brightness(1.14);}
 .btn.primary:hover{background:#b3141b;}
 
 /* ============================================================
-   RESPONSIVE — desktop table is >= 1280px. Below that, each
-   task row reflows into a stacked, labeled card. Page scrolls
-   naturally (no fixed-height inner scroll) on small screens.
+   RESPONSIVE — desktop table >= 1280px. Below that every row
+   (project header / history entry) reflows into a stacked card.
+   Only two row types exist now, so the mobile rules stay simple.
    ============================================================ */
 @media (max-width:1279px){
   html{font-size:clamp(14px,3.9vw,16px);}
@@ -218,120 +201,67 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .weekwrap{display:none;}
   .today{display:none;}
 
-  nav{margin-top:.9rem;}
-  nav button{flex:1;min-width:0;flex-direction:column;align-items:center;gap:.12rem;padding:.55rem .2rem;font-size:.9rem;line-height:1.2;}
-  nav button .en{font-size:.66rem;}
-  nav button .tl{text-align:center;}
-
   .sheet{flex:none;margin-top:.9rem;}
   .thead{display:none;}
   .tbody{display:block;overflow:visible;scrollbar-gutter:auto;}
 
-  .row{
-    grid-template-columns:auto 1fr auto!important;
-    column-gap:.7rem;row-gap:.55rem;align-items:start;
-    padding:.95rem 1rem .9rem;
-    border:1.5px solid var(--line2);margin-bottom:.7rem;
-  }
+  /* both row types reflow to two equal columns; the header line stacks above 담당·기한 */
+  .row{position:relative;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+    column-gap:.6rem;row-gap:.55rem;align-items:center;
+    padding:.9rem 1rem;border:1.5px solid var(--line2);margin-bottom:.6rem;}
   .row:last-child{border-bottom:1.5px solid var(--line2);}
-  .row.child{margin-left:.9rem;}
-
-  .row .pri{grid-column:1;grid-row:1;font-size:1.35rem;}
-  .row .pri.sub{align-self:center;}
-  .row .what{grid-column:2;grid-row:1;white-space:normal;font-size:1.12rem;line-height:1.35;}
-  .row .del{grid-column:3!important;grid-row:1!important;position:static!important;display:grid!important;
-    width:1.9rem;height:1.9rem;justify-self:end;}
   .row .dragh{display:none!important;}
-  .row .sp{display:none;}
-
-  .row .why,.row .note,.row .duec,.row .purpose,.row .prog{grid-column:1 / -1;}
-  .row .chip,.row .ochip{grid-column:1 / -1;justify-self:start;}
-
-  .row [data-label]{position:relative;padding-top:1.15rem;}
-  .row [data-label]::before{content:attr(data-label);position:absolute;top:0;left:0;
-    font-family:var(--mono);font-size:.6rem;font-weight:700;letter-spacing:.08em;color:var(--mut);text-transform:uppercase;}
-
-  .chip,.ochip,.fdate{min-height:44px;}
-  .bar{height:2.8rem;}
+  .row .del{position:absolute!important;display:grid!important;top:.5rem;right:.5rem;left:auto;bottom:auto;
+    transform:none;justify-self:auto;grid-column:auto;grid-row:auto;width:1.95rem;height:1.95rem;z-index:2;}
   .iconbtn{width:2.7rem;height:2.7rem;}
+  .chip,.ochip,.fdate{min-height:44px;}
+
+  /* Project header card: NO + name(+히스토리) on top, 담당 / 기한 below */
+  .row.project .pri{grid-column:1;grid-row:1;justify-self:start;align-self:center;font-size:1.3rem;}
+  .row.project .phead{grid-column:1 / -1;grid-row:1;padding-left:2rem;padding-right:2.4rem;flex-wrap:wrap;gap:.35rem .55rem;}
+  .row.project .phead .what{white-space:normal;font-size:1.15rem;overflow:visible;text-overflow:clip;}
+  .row.project .addhist{padding:.35rem .6rem;}
+  .row.project .ochip{grid-column:1;grid-row:2;justify-self:stretch;align-self:center;min-width:0;}
+  .row.project .duec{grid-column:2;grid-row:2;justify-self:stretch;align-self:center;min-width:0;}
+
+  /* History card: indented + grey, status + 한 일 on top, 담당 / 기한 below */
+  .row.history{margin-left:1rem;}
+  .row.history .pri{display:none;}
+  .row.history .histwhat{grid-column:1 / -1;grid-row:1;padding-right:2.4rem;white-space:pre-wrap;}
+  .row.history .chip{grid-column:1 / -1;grid-row:2;justify-self:start;}
+  .row.history .ochip{grid-column:1;grid-row:3;justify-self:stretch;align-self:center;min-width:0;}
+  .row.history .duec{grid-column:2;grid-row:3;justify-self:stretch;align-self:center;min-width:0;}
 
   .modal{align-items:flex-end;}
   .modal-card{width:100%;max-width:100%;max-height:88dvh;border-left:none;border-right:none;border-bottom:none;}
   #taskInput{height:9rem;}
-
-  /* ---- Project header card (mobile): name + owner/date, same on all tabs ---- */
-  .row.project{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;column-gap:.6rem;row-gap:.5rem;align-items:center;padding:.85rem;}
-  .row.project .pri{grid-column:1;grid-row:1;justify-self:start;align-self:center;font-size:1.35rem;}
-  .row.project .phead{grid-column:1 / -1;grid-row:1;padding-left:2rem;flex-wrap:wrap;gap:.5rem;}
-  .row.project .phead .what{white-space:normal;font-size:1.18rem;overflow:visible;text-overflow:clip;}
-  .row.project .ochip{grid-column:1;grid-row:2;justify-self:stretch;align-self:center;min-width:0;}
-  .row.project .duec{grid-column:2;grid-row:2;justify-self:stretch;align-self:center;min-width:0;}
-  /* ---- History card (mobile): status + content, then owner/date ---- */
-  .row.history{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;column-gap:.6rem;row-gap:.45rem;align-items:center;padding:.85rem;}
-  .row.history .pri{display:none;}   /* hide ↳ on mobile; tint + "한 일" label already convey it */
-  .row.history .histwhat{grid-column:1 / -1;grid-row:1;}
-  .row.history .chip{grid-column:1 / -1;grid-row:2;justify-self:start;}
-  .row.history .ochip{grid-column:1;grid-row:3;justify-self:stretch;align-self:center;min-width:0;}
-  .row.history .duec{grid-column:2;grid-row:3;justify-self:stretch;align-self:center;min-width:0;}
 }
 
 @media (max-width:479px){
   h1{font-size:1.4rem;}
   .part{font-size:.9rem;}
-  .row{column-gap:.5rem;padding:.85rem;}
-  nav button .tl{display:none;}
-  nav button::after{font-family:var(--body);font-weight:700;font-size:.9rem;color:inherit;}
-  nav button[data-day="mon"]::after{content:"계획";}
-  nav button[data-day="wed"]::after{content:"조율";}
-  nav button[data-day="fri"]::after{content:"마감";}
+  .row{padding:.85rem;}
+  .row.history{margin-left:.6rem;}
 }
 
-/* Narrow screens (phones): hide the week switcher + tune card internals. */
+/* Phones: hide the week switcher, and make the date field behave (iOS width, icon, 미정 label). */
 @media (max-width:600px){
   .selwrap{display:none;}
 
-  /* two equal columns. minmax(0,1fr) lets a track shrink below its content's min-width,
-     so the iOS Safari date input can no longer push the 기한 box past the card edge. */
-  .row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;column-gap:.55rem;row-gap:.55rem;padding:.85rem;}
-  .row .pri{grid-column:1;grid-row:1;justify-self:start;}
-  .row .pri.sub{align-self:start;}
-  .row .what{grid-column:1 / -1;grid-row:1;padding-left:2rem;padding-right:2.1rem;}
-  .row.child .what{padding-left:2.4rem;}
-  .row .del{position:absolute!important;display:grid!important;top:.4rem;right:.4rem;left:auto;bottom:auto;
-    transform:none;margin:0;grid-column:auto;grid-row:auto;justify-self:auto;width:1.95rem;height:1.95rem;}
-
-  /* body blocks stay full width */
-  .row .why,.row .note,.row .purpose,.row .prog,.row .chip{grid-column:1 / -1;}
-
-  /* MON/WED footer: 담당 + 기한, equal halves */
-  .row .ochip{grid-column:1;justify-self:stretch;align-self:center;min-width:0;font-size:.86rem;justify-content:center;}
-  .row .duec{grid-column:2;justify-self:stretch;align-self:center;padding-top:0;min-width:0;position:relative;}
+  .row .ochip{font-size:.86rem;justify-content:center;}
+  .row .duec{position:relative;}
   /* custom calendar icon — appearance:none strips the native one; Material Symbols, adapts to theme */
   .row .duec::before{content:"calendar_month";font-family:'Material Symbols Outlined';font-feature-settings:'liga';
-    font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;display:block;position:absolute;top:50%;left:auto;right:.4rem;
+    font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;position:absolute;top:50%;left:auto;right:.4rem;
     transform:translateY(-50%);font-size:1.05rem;line-height:1;color:var(--mut);pointer-events:none;}
-  /* date input on phones: use the Korean body font (Pretendard) — far narrower than the mono;
-     -webkit-appearance:none forces iOS Safari to honor width:100% (it otherwise keeps an
-     intrinsic min-width and spills out); the date-and-time-value margin reset kills iOS's
-     built-in inset that also widened the box. */
+  /* date input on phones: Korean body font (far narrower than mono); -webkit-appearance:none forces
+     iOS Safari to honor width:100%; the date-and-time-value margin reset kills iOS's built-in inset. */
   .row .fdate{-webkit-appearance:none;appearance:none;font-family:var(--body);font-weight:600;
     min-width:0;width:100%;max-width:100%;box-sizing:border-box;font-size:.86rem;padding:0 1.5rem;text-align:center;letter-spacing:-.02em;}
   .row .fdate::-webkit-date-and-time-value{margin:0;text-align:center;}
   .row .fdate::-webkit-calendar-picker-indicator{display:none;}
-  /* unset due date: appearance:none hides the native placeholder on iOS (blank white box),
-     so paint a clear "미정" label and keep the input tappable underneath. */
-  .row .duec.empty{position:relative;}
+  /* unset due date: paint a clear "미정" over the blank input, keep it tappable underneath */
   .row .duec.empty .fdate{color:transparent;}
-  .row .duec.empty::after{content:"미정";position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;
-    justify-content:center;color:var(--faint);font-family:var(--body);font-size:.86rem;pointer-events:none;}
-
-  /* FRI(마감) footer: 진행(상태) + 담당 + 기한 share one line, 3 equal columns */
-  .tbody[data-day="fri"] .row{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
-  .tbody[data-day="fri"] .row .chip{grid-column:1;justify-self:stretch;align-self:center;min-width:0;
-    justify-content:center;gap:.2rem;padding:0 .3rem;font-size:.8rem;}
-  .tbody[data-day="fri"] .row .ochip{grid-column:2;justify-content:center;gap:.2rem;padding:0 .3rem;font-size:.8rem;}
-  .tbody[data-day="fri"] .row .duec{grid-column:3;}
-  .tbody[data-day="fri"] .row .fdate{font-size:.8rem;padding:0 .3rem;}
-  .tbody[data-day="fri"] .row .duec::before{display:none;}
-  .tbody[data-day="fri"] .row .chip .ms,.tbody[data-day="fri"] .row .ochip .ms{font-size:1rem;}
+  .row .duec.empty::after{content:"미정";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    color:var(--faint);font-family:var(--body);font-size:.86rem;pointer-events:none;}
 }

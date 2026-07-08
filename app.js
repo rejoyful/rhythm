@@ -112,8 +112,6 @@
   var DOW=["SUN","MON","TUE","WED","THU","FRI","SAT"];
   var DOWK=["일","월","화","수","목","금","토"];
   function pad(n){return(n<10?"0":"")+n;}
-  var GRP_N=7;  // brand tint palette size (styles.css .grp-0..6)
-  function hashStr(s){s=String(s);var h=0,i;for(i=0;i<s.length;i++){h=((h<<5)-h+s.charCodeAt(i))|0;}return Math.abs(h);}
   function fmtToday(d){return d.getFullYear()+"."+pad(d.getMonth()+1)+"."+pad(d.getDate())+" "+DOW[d.getDay()];}
   function weekLabel(d){var day=(d.getDay()+6)%7,mon=new Date(d);mon.setDate(d.getDate()-day);
     var fri=new Date(mon);fri.setDate(mon.getDate()+4);
@@ -146,18 +144,11 @@
     if(t.id==null)t.id="t"+i+"_"+Math.random().toString(36).slice(2,7);
     if(t.asis===undefined&&t.tobe===undefined){t.asis=t.why||"";t.tobe="";}
   });
-  var curDay="mon";
-
-  var GRID={
-    mon:"4.2rem 26rem 100px minmax(0,1fr) minmax(0,1fr) 9rem 10rem",
-    wed:"4.2rem 26rem 100px minmax(0,1fr) 13rem 9rem 10rem",
-    fri:"4.2rem 26rem 100px minmax(0,1fr) 12rem 9rem 10rem"
-  };
-  var HEAD={
-    mon:["NO","과업","","AS-IS","TO-BE","담당","기한"],
-    wed:["NO","과업","","병목 · 변수","진행","담당","기한"],
-    fri:["NO","과업","","이월 · 수정 계획","진행","담당","기한"]
-  };
+  // Single unified view — tabs removed. Every top-level task is a PROJECT header;
+  // its children are HISTORY entries. Two column templates, no per-day variants.
+  var COLS_PROJECT="4.2rem minmax(0,1fr) 9rem 10rem";        // NO | 프로젝트(+히스토리) | 담당 | 기한
+  var COLS_HISTORY="4.2rem auto minmax(0,1fr) 9rem 10rem";   // ↳ | 상태 | 한 일 | 담당 | 기한
+  var HEAD=["NO","프로젝트","담당","기한"];
   var STATUS=[
     {k:"진행중",icon:"radio_button_unchecked",cls:""},
     {k:"완료",icon:"check_circle",cls:"done"},
@@ -210,9 +201,9 @@
     pids.forEach(function(pid){childrenOf(pid).forEach(function(t,i){if(t.pri!==i+1){t.pri=i+1;touch(t);}});});
   }
 
-  // A top-level task that has children renders as a PROJECT: the parent is a header (name only,
-  // its own day-fields stay in the data but are hidden), the children are the project's HISTORY
-  // (shown the same way on Mon/Wed/Fri: status + what + owner + date).
+  // Every top-level task is a PROJECT header (name + owner + date + "+히스토리"); its own
+  // legacy day-fields stay in the data but aren't shown. Its children are the project's
+  // HISTORY log — one line each: status + what(한 일) + owner + date.
   function projectHeaderCells(t){
     return '<div class="pri"'+CE()+' data-field="pri" data-id="'+t.id+'">'+pad(t.pri)+'</div>'
       +'<div class="phead"><div class="what"'+CE()+' data-field="what" data-id="'+t.id+'" title="'+escAttr(t.what)+'">'+esc(t.what)+'</div>'
@@ -230,44 +221,22 @@
     document.getElementById("weekLabel").textContent=(state.label||weekLabel(new Date()))+(readOnly?"  ·  보기 전용":"");
     var dtt=document.getElementById("docTitle"),dpp=document.getElementById("docPart");if(dtt)dtt.contentEditable=EDITABLE;if(dpp)dpp.contentEditable=EDITABLE;
     var ab=document.getElementById("addBtn");if(ab)ab.style.display=EDITABLE?"":"none";
-    [].forEach.call(document.querySelectorAll("nav button"),function(b){b.classList.toggle("active",b.dataset.day===curDay);});
 
-    var th=document.getElementById("thead");th.style.gridTemplateColumns=GRID[curDay];
-    th.innerHTML=HEAD[curDay].map(function(h){return '<div class="h">'+h+'</div>';}).join("");
+    var th=document.getElementById("thead");th.style.gridTemplateColumns=COLS_PROJECT;
+    th.innerHTML=HEAD.map(function(h){return '<div class="h">'+h+'</div>';}).join("");
 
     var order=buildOrder();
-    // assign a faint tint colour to each group (a parent that has children + its children).
-    // depth-first order keeps a parent immediately before its children, so we carry the
-    // current group colour forward; neighbouring groups are forced to differ.
-    var _prevG=-1,_curG=null;
-    order.forEach(function(o){
-      if(o.depth===0){
-        if(childrenOf(o.t.id).length>0){var c=hashStr(o.t.id)%GRP_N;if(c===_prevG)c=(c+1)%GRP_N;_prevG=c;_curG=c;}
-        else _curG=null;
-      }
-      o.grp=_curG;
-    });
     var tb=document.getElementById("tbody");
-    tb.dataset.day=curDay;
     tb.style.gridTemplateRows="repeat("+Math.max(order.length,1)+",minmax(min-content,1fr))";
     tb.innerHTML=order.map(function(o){
-      var t=o.t,depth=o.depth,cells,gridCols,extra="";
-      var isProject=depth===0&&childrenOf(t.id).length>0;   // has children → project header
-      var isHistory=depth>0;                                 // child → history entry
-      if(isProject){
-        cells=projectHeaderCells(t);gridCols="4.2rem minmax(0,1fr) 9rem 10rem";extra=" project";
-      }else if(isHistory){
-        cells=historyCells(t);gridCols="4.2rem auto minmax(0,1fr) 9rem 10rem";extra=" history child";
-      }else{
-        var priCell='<div class="pri"'+CE()+' data-field="pri" data-id="'+t.id+'">'+pad(t.pri)+'</div>';
-        var sp='<div class="sp"></div>';
-        if(curDay==="mon"){cells=priCell+edWhat(t)+sp+ed("asis",t.id,t.asis||"","why","AS-IS")+ed("tobe",t.id,t.tobe||"","why","TO-BE")+ownerCell(t)+dueCell(t);}
-        else if(curDay==="wed"){cells=priCell+edWhat(t)+sp+ed("wedNote",t.id,t.wedNote,"note","병목 · 변수")+progCell(t)+ownerCell(t)+dueCell(t);}
-        else{cells=priCell+edWhat(t)+sp+ed("friNote",t.id,t.friNote,"note","이월 · 수정")+chipCell(t)+ownerCell(t)+dueCell(t);}
-        gridCols=GRID[curDay];
+      var t=o.t,depth=o.depth,cells,gridCols,extra;
+      if(depth>0){                         // child → history entry (faint grey, indented)
+        cells=historyCells(t);gridCols=COLS_HISTORY;extra=" history child";
+      }else{                               // top-level → project header (no tint) even with no children yet
+        cells=projectHeaderCells(t);gridCols=COLS_PROJECT;extra=" project";
       }
-      var done=isProject?false:(isHistory?/완료/.test(t.friStatus):((curDay==="fri"&&/완료/.test(t.friStatus))||(curDay==="wed"&&t.wedPct===100)));
-      return '<div class="row'+(done?" done":"")+extra+(o.grp!=null?" grp-"+o.grp:"")+'" data-id="'+t.id+'" style="grid-template-columns:'+gridCols+'">'+
+      var done=depth>0&&/완료/.test(t.friStatus);
+      return '<div class="row'+(done?" done":"")+extra+'" data-id="'+t.id+'" style="grid-template-columns:'+gridCols+'">'+
         (EDITABLE?'<span class="dragh" data-id="'+t.id+'" aria-label="순서 이동"><span class="ms">drag_indicator</span></span>':'')+
         cells+
         (EDITABLE?'<button class="del" data-id="'+t.id+'" aria-label="삭제"><span class="ms">delete</span></button>':'')+'</div>';
@@ -411,11 +380,8 @@
     renumberAll();saveLocal();render();
   }
 
-  document.getElementById("tabs").addEventListener("click",function(e){
-    var b=e.target.closest("button");if(!b)return;curDay=b.dataset.day;render();});
-
-  // ----- add modal -----
-  var TPL="(무엇을) \n(누구의) \n(어떤 문제를) \n(어떻게) \n기한 : \n작업자 : \n비고 : ";
+  // ----- add project modal -----
+  var TPL="프로젝트명 : \n담당 : \n기한(월/일) : ";
   function openModal(){if(readOnly){alert("지난 주는 보기 전용입니다. '현재' 주차에서 추가해 주세요.");return;}
     document.getElementById("taskInput").value=TPL;document.getElementById("modal").hidden=false;
     setTimeout(function(){document.getElementById("taskInput").focus();},30);}
@@ -425,20 +391,17 @@
   document.getElementById("mCancel").addEventListener("click",closeModal);
   document.getElementById("modal").addEventListener("click",function(e){if(e.target.id==="modal")closeModal();});
 
+  // simple project registration — one field per line, only the name is required
   function parseTask(text){
-    var defs=[["what",/\(무엇을\)/],["who",/\(누구의\)/],["problem",/\(어떤\s*문제를?\)/],["how",/\(어떻게\)/],["due",/기한\s*[:：]/],["owner",/작업자?\s*[:：]/],["note",/비고\s*[:：]/]];
-    var found=[];defs.forEach(function(d){var m=d[1].exec(text);if(m)found.push({k:d[0],s:m.index,e:m.index+m[0].length});});
-    found.sort(function(a,b){return a.s-b.s;});
-    var r={};for(var i=0;i<found.length;i++){var s=found[i].e,e=(i+1<found.length)?found[i+1].s:text.length;r[found[i].k]=text.slice(s,e).trim();}
-    return r;
+    function line(re){var m=re.exec(text);return m?text.slice(m.index+m[0].length).split("\n")[0].trim():"";}
+    return {what:line(/프로젝트명?\s*[:：]/),owner:line(/담당\s*[:：]/),due:line(/기한[^:：\n]*[:：]/)};
   }
-  function weave(p){var a=[];if(p.who)a.push(p.who);if(p.problem)a.push(p.problem);if(p.how)a.push(p.how);return a.join(" ");}
   document.getElementById("mAdd").addEventListener("click",function(){
     var p=parseTask(document.getElementById("taskInput").value);
-    if(!p.what){alert("(무엇을) 항목은 반드시 입력해 주세요.");return;}
+    if(!p.what){alert("프로젝트명을 입력해 주세요.");return;}
     var maxp=state.tasks.reduce(function(m,t){return t._del?m:Math.max(m,t.pri||0);},0);
-    state.tasks.push({id:"t"+Date.now(),parent:null,pri:maxp+1,what:p.what,asis:p.problem||"",tobe:p.how||"",owner:p.owner||"—",due:p.due||"—",
-      wedPct:null,wedNote:"—",friStatus:"진행중",friNote:p.note||"—",_v:Date.now()});
+    state.tasks.push({id:"t"+Date.now(),parent:null,pri:maxp+1,what:p.what,asis:"",tobe:"",owner:p.owner||"—",due:p.due||"—",
+      wedPct:null,wedNote:"—",friStatus:"진행중",friNote:"—",_v:Date.now()});
     saveLocal();closeModal();render();
   });
 

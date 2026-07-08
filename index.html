@@ -26,16 +26,10 @@
         <button class="iconbtn" id="newWeekBtn" aria-label="새 주차 시작" title="새 주차 시작"><span class="ms">event_repeat</span></button>
         <span class="saveind" id="saveind"><span class="ms">check</span>저장됨</span>
         <button class="iconbtn" id="themeBtn" aria-label="다크모드" title="다크모드"><span class="ms">dark_mode</span></button>
-        <button class="iconbtn accent" id="addBtn" aria-label="과업 추가" title="과업 추가"><span class="ms">add</span></button>
+        <button class="iconbtn accent" id="addBtn" aria-label="프로젝트 추가" title="프로젝트 추가"><span class="ms">add</span></button>
       </div>
     </div>
   </header>
-
-  <nav id="tabs">
-    <button data-day="mon" class="active"><span class="en">MON</span><span class="tl">월요일 · 계획 정렬</span></button>
-    <button data-day="wed"><span class="en">WED</span><span class="tl">수요일 · 중간 조율</span></button>
-    <button data-day="fri"><span class="en">FRI</span><span class="tl">금요일 · 마감 체크</span></button>
-  </nav>
 
   <div class="sheet">
     <div class="thead" id="thead"></div>
@@ -45,7 +39,7 @@
   <div class="modal" id="modal" hidden>
     <div class="modal-card">
       <div class="modal-head">
-        <div><span class="m-title">과업 추가</span><span class="m-sub">6하원칙으로 작성하면 자동 정리됩니다</span></div>
+        <div><span class="m-title">프로젝트 추가</span><span class="m-sub">이름만 입력해도 등록됩니다</span></div>
         <button class="iconbtn ghost" id="mClose" aria-label="닫기"><span class="ms">close</span></button>
       </div>
       <textarea id="taskInput" spellcheck="false"></textarea>
