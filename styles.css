@@ -203,7 +203,7 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .today{display:none;}
 
   .sheet{flex:none;margin-top:.9rem;}
-  .tbody{display:block;overflow:visible;scrollbar-gutter:auto;border-top:none;}
+  .tbody{display:block;overflow:visible;scrollbar-gutter:auto;border-top:2px solid var(--ink);}
 
   /* Continuous list (like the desktop table): flush-left rows, no card boxes/indent, no leading
      numbers. A project + its history read as one attached block — white header, grey history rows. */
