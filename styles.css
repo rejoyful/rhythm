@@ -54,12 +54,14 @@ h1{font-family:var(--disp);font-size:2.1rem;font-weight:700;letter-spacing:-.01e
 
 .sheet{flex:1;display:flex;flex-direction:column;min-height:0;margin-top:1rem;}
 .row{display:grid;align-items:center;gap:1.4rem;}
-.tbody{flex:1;display:grid;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;
+/* natural block flow: every row keeps a consistent, comfortable height and the list simply
+   scrolls when it's long — no more min-content squeezing that made rows collide with the lines */
+.tbody{flex:1;display:block;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;
   scrollbar-width:thin;scrollbar-color:var(--line2) transparent;border-top:2px solid var(--ink);}
 .tbody::-webkit-scrollbar{width:8px;}
 .tbody::-webkit-scrollbar-thumb{background:var(--line2);}
 .tbody::-webkit-scrollbar-track{background:transparent;}
-.row{position:relative;padding:0 2.8rem 0 2.2rem;border-bottom:1px solid var(--line);}
+.row{position:relative;padding:.95rem 2.8rem .95rem 2.2rem;border-bottom:1px solid var(--line);}
 .row:last-child{border-bottom:none;}
 .dragh{position:absolute;left:.45rem;top:50%;transform:translateY(-50%);width:1.6rem;height:1.9rem;
   display:none;place-items:center;color:var(--faint);cursor:grab;}
