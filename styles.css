@@ -242,7 +242,7 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row.history .duec{grid-column:3;grid-row:2;}
 
   /* --- lighten the meta so a card reads as info, not a wall of buttons --- */
-  .row .chip{height:1.9rem;min-height:1.9rem;padding:0 .5rem;font-size:.8rem;gap:.25rem;}
+  .row .chip{height:1.9rem;min-height:1.9rem;min-width:4.7rem;padding:0 .5rem;font-size:.8rem;gap:.25rem;justify-content:center;}   /* uniform width — all statuses floored to 진행중 (widest) */
   .row .chip .ms{font-size:1rem;}
   /* 담당 → compact colored tile with initials; the full name stays in the desktop table */
   .row .ochip{height:1.9rem;min-height:1.9rem;min-width:1.9rem;width:auto;padding:0 .4rem;justify-content:center;font-size:.8rem;}
