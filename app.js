@@ -70,7 +70,7 @@
     var ns=new Date(curStart);ns.setDate(ns.getDate()+7);var newId=isoWeekId(ns);
     while(weeksList.indexOf(newId)>=0){ns.setDate(ns.getDate()+7);newId=isoWeekId(ns);}
     var carried=state.tasks.filter(function(t){return !t._del&&t.friStatus!=="완료";}).map(function(t){
-      return {id:t.id,parent:(t.parent||null),pri:t.pri,what:t.what,asis:t.asis,tobe:t.tobe,owner:t.owner,due:t.due,wedPct:null,wedNote:"—",friStatus:"진행중",friNote:"—",_v:Date.now()};});
+      return {id:t.id,parent:(t.parent||null),pri:t.pri,what:t.what,asis:t.asis,tobe:t.tobe,owner:t.owner,due:t.due,wedPct:t.wedPct,wedNote:"—",friStatus:"진행중",friNote:"—",_v:Date.now()};});   // 진행률은 이월(작업이 이어지므로)
     var keep={};carried.forEach(function(t){keep[t.id]=1;});
     carried.forEach(function(t){if(t.parent&&!keep[t.parent])t.parent=null;});
     var data=normalize({start:isoDate(ns),label:weekLabel(ns),title:state.title,part:state.part,tasks:carried});
@@ -146,8 +146,8 @@
   });
   // Single unified view — tabs removed. Every top-level task is a PROJECT header;
   // its children are HISTORY entries. Two column templates, no per-day variants.
-  var COLS_PROJECT="4.2rem minmax(0,1fr) 9rem 10rem";        // NO | 프로젝트(+히스토리) | 담당 | 기한
-  var COLS_HISTORY="4.2rem auto minmax(0,1fr) 9rem 10rem";   // ↳ | 상태 | 한 일 | 담당 | 기한
+  var COLS_PROJECT="4.2rem minmax(0,1fr) 13rem 9rem 10rem";        // NO | 프로젝트 | 전체 진행률 | (빈칸) | 기한
+  var COLS_HISTORY="4.2rem auto minmax(0,1fr) 13rem 9rem 10rem";   // ↳ | 상태 | 한 일 | 진행률 | 담당 | 기한
   var STATUS=[
     {k:"진행중",icon:"radio_button_unchecked",cls:""},
     {k:"완료",icon:"check_circle",cls:"done"},
@@ -162,14 +162,20 @@
   function escAttr(s){return esc(s).replace(/"/g,"&quot;");}
   function CE(){return EDITABLE?" contenteditable":"";}
   function edWhat(t){return '<div class="what"'+CE()+' data-field="what" data-id="'+t.id+'" title="'+escAttr(t.what)+'">'+esc(t.what)+'</div>';}
-  function segHtml(p){var on=Math.round((p||0)/20),h="";for(var i=0;i<5;i++)h+='<span class="seg'+(i<on?" on":"")+'" data-i="'+i+'"></span>';return h;}
-  function progCell(t){
-    var hold=(t.wedPct===null||t.wedPct===undefined||t.wedPct==="");
-    var bar='<div class="bar">'+segHtml(hold?0:t.wedPct)+'</div>';
-    var val=hold
-      ? '<span class="val"><span class="holdv"'+CE()+' data-field="wedPct" data-id="'+t.id+'"></span></span>'
-      : '<span class="val"><span'+CE()+' data-field="wedPct" data-id="'+t.id+'">'+t.wedPct+'</span><span class="sign">%</span></span>';
-    return '<div class="prog" data-id="'+t.id+'">'+val+bar+'</div>';
+  // ----- 진행률: 10% 단위, 세그먼트를 눌러 조정 -----
+  var PSTEP=10,PSEG=100/PSTEP;
+  function pctOf(t){var v=t&&t.wedPct;return(v===null||v===undefined||v==="")?0:Math.max(0,Math.min(100,parseInt(v,10)||0));}
+  function segHtml(p){var on=Math.round((p||0)/PSTEP),h="";for(var i=0;i<PSEG;i++)h+='<span class="seg'+(i<on?" on":"")+'" data-i="'+i+'"></span>';return h;}
+  function progCell(t){var v=pctOf(t);
+    return '<div class="prog" data-id="'+t.id+'"><div class="bar">'+segHtml(v)+'</div>'
+      +'<span class="pval">'+v+'<span class="sign">%</span></span></div>';
+  }
+  // 프로젝트 전체 진행률 = 하위 업무 진행률의 평균(하위 없으면 0). 합산값이라 읽기 전용.
+  function projectPct(t){var ch=childrenOf(t.id);if(!ch.length)return 0;
+    return Math.round(ch.reduce(function(s,c){return s+pctOf(c);},0)/ch.length);}
+  function totalProgCell(t){var v=projectPct(t),n=childrenOf(t.id).length;
+    return '<div class="prog total" title="하위 업무 '+n+'건 진행률 평균"><div class="bar">'+segHtml(v)+'</div>'
+      +'<span class="pval">'+v+'<span class="sign">%</span></span></div>';
   }
   function chipCell(t){var s=statusObj(t.friStatus);
     return '<button class="chip '+s.cls+'" data-id="'+t.id+'"><span class="ms">'+s.icon+'</span>'+esc(t.friStatus)+'</button>';}
@@ -201,7 +207,16 @@
 
   // ----- tree (group) helpers -----
   function childrenOf(pid){return state.tasks.filter(function(x){return !x._del&&(x.parent||null)===pid;}).sort(function(a,b){return(a.pri||99)-(b.pri||99);});}
-  function buildOrder(){var res=[];(function walk(pid,depth){childrenOf(pid).forEach(function(t){res.push({t:t,depth:depth});walk(t.id,depth+1);});})(null,0);return res;}
+  // 접기 상태는 "보는 사람"의 취향이라 공유 데이터가 아니라 localStorage 에 둔다(남의 화면을 접지 않음)
+  var COL_LS="axp_collapsed_v1",collapsed={};
+  try{collapsed=JSON.parse(localStorage.getItem(COL_LS)||"{}")||{};}catch(e){collapsed={};}
+  function isCollapsed(id){return !!collapsed[id];}
+  function toggleCollapse(id){if(collapsed[id])delete collapsed[id];else collapsed[id]=1;
+    try{localStorage.setItem(COL_LS,JSON.stringify(collapsed));}catch(e){}render();}
+  function buildOrder(){var res=[];(function walk(pid,depth){childrenOf(pid).forEach(function(t){
+    res.push({t:t,depth:depth});
+    if(!(depth===0&&isCollapsed(t.id)))walk(t.id,depth+1);   // 접힌 프로젝트는 하위를 건너뜀
+  });})(null,0);return res;}
   function isDesc(aId,bId){var t=getTask(aId),g=0;while(t&&t.parent&&g++<200){if(t.parent===bId)return true;t=getTask(t.parent);}return false;}
   function renumberAll(){
     var pids=[null].concat(state.tasks.map(function(t){return t.id;}));
@@ -212,14 +227,19 @@
   // legacy day-fields stay in the data but aren't shown. Its children are the project's
   // HISTORY log — one line each: status + what(한 일) + owner + date.
   function projectHeaderCells(t){
+    var kids=childrenOf(t.id).length,col=isCollapsed(t.id);
     return '<div class="pri"'+CE()+' data-field="pri" data-id="'+t.id+'">'+pad(t.pri)+'</div>'
-      +'<div class="phead"><div class="what"'+CE()+' data-field="what" data-id="'+t.id+'" title="'+escAttr(t.what)+'">'+esc(t.what)+'</div>'
-      +(EDITABLE?'<button class="addhist" data-id="'+t.id+'" title="히스토리 추가" aria-label="히스토리 추가"><span class="ms">add</span></button>':'')+'</div>'
-      +ownerCell(t)+dueCell(t);
+      +'<div class="phead">'
+      +'<button class="coltog'+(kids?"":" off")+'" data-id="'+t.id+'" title="'+(col?"펼치기":"접기")+'" aria-label="'+(col?"펼치기":"접기")+'"><span class="ms">'+(col?"chevron_right":"expand_more")+'</span></button>'
+      +'<div class="what"'+CE()+' data-field="what" data-id="'+t.id+'" title="'+escAttr(t.what)+'">'+esc(t.what)+'</div>'
+      +(kids&&col?'<span class="cnt">'+kids+'</span>':'')
+      +(EDITABLE?'<button class="addhist" data-id="'+t.id+'" title="히스토리 추가" aria-label="히스토리 추가"><span class="ms">add</span></button>':'')
+      +'</div>'
+      +totalProgCell(t)+'<div class="sp"></div>'+dueCell(t);   // 담당 자리는 빈칸 — 기한 열을 히스토리와 맞추기 위함
   }
   function historyCells(t){
     return '<div class="pri sub" data-id="'+t.id+'"><span class="ms">subdirectory_arrow_right</span></div>'
-      +chipCell(t)+ed("what",t.id,t.what||"","note histwhat","한 일")+ownerCell(t)+dueCell(t);
+      +chipCell(t)+ed("what",t.id,t.what||"","note histwhat","한 일")+progCell(t)+ownerCell(t)+dueCell(t);
   }
 
   function render(){
@@ -275,6 +295,8 @@
     if(el.dataset.field==="due"){t.due=el.value||"—";var dc=el.closest(".duec");if(dc){dc.classList.toggle("empty",!el.value);var dd=dc.querySelector(".ddisp");if(dd)dd.textContent=el.value?el.value.slice(5).replace("-","."):"미정";}touch(t);saveLocal();return;}
   });
   tb.addEventListener("click",function(e){
+    var ct=e.target.closest(".coltog");
+    if(ct){toggleCollapse(ct.dataset.id);return;}     // 접기/펼치기는 보기 전용 주차에서도 동작
     if(readOnly)return;
     var ah=e.target.closest(".addhist");
     if(ah){var pp=getTask(ah.dataset.id);if(pp){
@@ -288,8 +310,10 @@
       state.tasks.forEach(function(x){if((x.parent||null)===t.id){x.parent=null;touch(x);}});
       t._del=true;touch(t);renumberAll();saveLocal();render();}return;}
     var seg=e.target.closest(".seg");
-    if(seg){var pg=seg.closest(".prog");var ts=pg&&getTask(pg.dataset.id);if(ts){
-      var nv=(+seg.dataset.i+1)*20;if(ts.wedPct===nv)nv-=20;ts.wedPct=nv;
+    if(seg){var pg=seg.closest(".prog");
+      if(pg&&pg.classList.contains("total"))return;   // 전체 진행률은 하위 합산값이라 직접 조정 불가
+      var ts=pg&&getTask(pg.dataset.id);if(ts){
+      var nv=(+seg.dataset.i+1)*PSTEP;if(ts.wedPct===nv)nv-=PSTEP;if(nv<0)nv=0;ts.wedPct=nv;
       if(nv===100)ts.friStatus="완료";else if(ts.friStatus==="완료")ts.friStatus="진행중";touch(ts);saveLocal();render();}return;}
     var oc=e.target.closest(".ochip");
     if(oc){var to=getTask(oc.dataset.id);if(!to)return;

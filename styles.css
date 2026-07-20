@@ -91,6 +91,12 @@ body.dark .row.history{background:#181818;}
 .addhist .ms{font-size:1.15rem;}
 /* "@이름" 멘션 — 표시 전용 강조(호출 아님) */
 .mention{font-weight:700;color:var(--red);}
+/* 프로젝트 접기/펼치기 */
+.coltog{flex:none;display:inline-grid;place-items:center;width:1.7rem;height:1.7rem;background:transparent;border:none;color:var(--mut);cursor:pointer;}
+.coltog:hover{color:var(--ink);}
+.coltog .ms{font-size:1.4rem;}
+.coltog.off{visibility:hidden;}   /* 하위가 없으면 자리만 유지해 제목 시작선을 맞춘다 */
+.phead .cnt{flex:none;font-family:var(--mono);font-size:.72rem;font-weight:700;color:var(--mut);background:var(--empty);padding:.12rem .4rem;}
 /* ---- History entry (child) — the project's timeline, same on Mon/Wed/Fri ---- */
 .row.history{align-items:center;}
 .history .histwhat{font-size:.98rem;}
@@ -130,16 +136,16 @@ body.dark .fdate::-webkit-calendar-picker-indicator{filter:invert(1) brightness(
 .row:hover .del{display:grid;}
 .del:hover{background:var(--red);border-color:var(--red);color:#fff;}
 
-.prog{display:flex;flex-direction:row;align-items:center;gap:.7rem;}
-.bar{flex:1;display:flex;gap:4px;height:2.5rem;}
-.seg{flex:1;height:100%;background:var(--empty);cursor:pointer;}
+/* 진행률 — 10칸(칸당 10%). 칸을 누르면 그 값으로 설정. 프로젝트의 .total 은 하위 평균이라 읽기 전용 */
+.prog{display:flex;align-items:center;gap:.55rem;min-width:0;}
+.bar{flex:1;display:flex;gap:2px;height:1.4rem;min-width:0;}
+.seg{flex:1;height:100%;background:var(--empty);cursor:pointer;transition:background .1s;}
 .seg:hover{filter:brightness(.92);}
 .seg.on{background:var(--fill);}
-.prog .val{font-family:var(--mono);font-size:.92rem;color:var(--ink);font-weight:700;white-space:nowrap;min-width:3rem;display:flex;align-items:baseline;}
-.prog .val .sign{color:var(--mut);font-weight:400;}
-.hold{font-family:var(--mono);font-size:.86rem;font-weight:700;letter-spacing:.1em;color:var(--red);}
-.holdv{font-family:var(--mono);font-size:.92rem;font-weight:700;letter-spacing:.08em;color:var(--red);outline:none;cursor:text;display:inline-block;min-width:3rem;}
-.holdv:empty:before{content:"HOLD";color:var(--red);pointer-events:none;}
+.prog .pval{font-family:var(--mono);font-size:.84rem;color:var(--ink);font-weight:700;white-space:nowrap;min-width:2.9rem;text-align:right;}
+.prog .pval .sign{color:var(--mut);font-weight:400;}
+.prog.total .seg{cursor:default;}
+.prog.total .seg:hover{filter:none;}
 
 .chip,.ochip{display:inline-flex;align-items:center;gap:.45rem;font-family:var(--body);font-size:.92rem;font-weight:700;
   letter-spacing:.02em;white-space:nowrap;border:1.5px solid var(--ink);height:2.5rem;padding:0 .8rem;background:var(--paper);cursor:pointer;
@@ -228,15 +234,16 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row.willdel::after{background:#b3141b;}
 
   /* Project header row: name (+ ghost) on top; a light meta line (담당 · 기한) below, packed left. */
-  .row.project{grid-template-columns:auto auto 1fr!important;}
+  .row.project{grid-template-columns:auto minmax(0,1fr)!important;}
   .row.project .pri{display:none;}
+  .row.project .sp{display:none;}
   .row.project .phead{grid-column:1 / -1;grid-row:1;flex-wrap:wrap;gap:.35rem .5rem;}
   .row.project .phead .what{white-space:normal;font-size:1.18rem;overflow:visible;text-overflow:clip;}
   .row.project .addhist{width:2.5rem;height:2.5rem;border:1.5px solid var(--line2);color:var(--ink);}
   .row.project .addhist .ms{font-size:1.5rem;}
   .row.project .addhist:hover{border-color:var(--ink);}
-  .row.project .ochip{grid-column:1;grid-row:2;}
-  .row.project .duec{grid-column:2;grid-row:2;}
+  .row.project .duec{grid-column:1;grid-row:2;}
+  .row.project .prog{grid-column:2;grid-row:2;}   /* 전체 진행률(읽기 전용)은 기한 옆에 */
 
   /* History row: flush-left. 한 일 on top; a compact icon meta (상태 · 담당 · 기한) below, packed left. */
   .row.history{grid-template-columns:auto auto auto 1fr!important;margin-left:0;column-gap:.5rem;}
@@ -245,6 +252,10 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row.history .chip{grid-column:1;grid-row:2;}
   .row.history .ochip{grid-column:2;grid-row:2;}
   .row.history .duec{grid-column:3;grid-row:2;}
+  /* 진행률은 손가락으로 누르기 쉽게 한 줄을 통째로 쓴다(칸당 ≈30px) */
+  .row.history .prog{grid-column:1 / -1;grid-row:3;}
+  .row .bar{height:1.6rem;}
+  .row .prog .pval{font-size:.78rem;min-width:2.7rem;}
 
   /* --- lighten the meta so a card reads as info, not a wall of buttons --- */
   .row .chip{height:1.9rem;min-height:1.9rem;min-width:4.7rem;padding:0 .5rem;font-size:.8rem;gap:.25rem;justify-content:center;}   /* uniform width — all statuses floored to 진행중 (widest) */
