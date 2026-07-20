@@ -170,13 +170,8 @@
     return '<div class="prog" data-id="'+t.id+'"><div class="bar">'+segHtml(v)+'</div>'
       +'<span class="pval">'+v+'<span class="sign">%</span></span></div>';
   }
-  // 프로젝트 전체 진행률 = 하위 업무 진행률의 평균(하위 없으면 0). 합산값이라 읽기 전용.
-  function projectPct(t){var ch=childrenOf(t.id);if(!ch.length)return 0;
-    return Math.round(ch.reduce(function(s,c){return s+pctOf(c);},0)/ch.length);}
-  function totalProgCell(t){var v=projectPct(t),n=childrenOf(t.id).length;
-    return '<div class="prog total" title="하위 업무 '+n+'건 진행률 평균"><div class="bar">'+segHtml(v)+'</div>'
-      +'<span class="pval">'+v+'<span class="sign">%</span></span></div>';
-  }
+  // 프로젝트 전체 진행률은 직접 입력한다(하위 평균 아님). 차주로 넘어가면 완료된 하위가 빠져
+  // 평균이 오히려 내려가 버리기 때문에, 프로젝트의 누적 진척은 사람이 판단해 적는 게 맞다.
   function chipCell(t){var s=statusObj(t.friStatus);
     return '<button class="chip '+s.cls+'" data-id="'+t.id+'"><span class="ms">'+s.icon+'</span>'+esc(t.friStatus)+'</button>';}
   function ed(f,id,v,cls,lab){return '<div class="'+cls+'"'+CE()+' data-field="'+f+'" data-id="'+id+'"'+(lab?' data-label="'+lab+'"':'')+'>'+mentionHtml(v)+'</div>';}
@@ -235,7 +230,7 @@
       +(kids&&col?'<span class="cnt">'+kids+'</span>':'')
       +(EDITABLE?'<button class="addhist" data-id="'+t.id+'" title="히스토리 추가" aria-label="히스토리 추가"><span class="ms">add</span></button>':'')
       +'</div>'
-      +totalProgCell(t)+'<div class="sp"></div>'+dueCell(t);   // 담당 자리는 빈칸 — 기한 열을 히스토리와 맞추기 위함
+      +progCell(t)+'<div class="sp"></div>'+dueCell(t);   // 담당 자리는 빈칸 — 기한 열을 히스토리와 맞추기 위함
   }
   function historyCells(t){
     return '<div class="pri sub" data-id="'+t.id+'"><span class="ms">subdirectory_arrow_right</span></div>'
@@ -311,10 +306,11 @@
       t._del=true;touch(t);renumberAll();saveLocal();render();}return;}
     var seg=e.target.closest(".seg");
     if(seg){var pg=seg.closest(".prog");
-      if(pg&&pg.classList.contains("total"))return;   // 전체 진행률은 하위 합산값이라 직접 조정 불가
       var ts=pg&&getTask(pg.dataset.id);if(ts){
       var nv=(+seg.dataset.i+1)*PSTEP;if(ts.wedPct===nv)nv-=PSTEP;if(nv<0)nv=0;ts.wedPct=nv;
-      if(nv===100)ts.friStatus="완료";else if(ts.friStatus==="완료")ts.friStatus="진행중";touch(ts);saveLocal();render();}return;}
+      // 상태 자동연동은 하위 업무만. 프로젝트까지 100%→완료로 바꾸면 다음 주차에 통째로 사라진다.
+      if(ts.parent){if(nv===100)ts.friStatus="완료";else if(ts.friStatus==="완료")ts.friStatus="진행중";}
+      touch(ts);saveLocal();render();}return;}
     var oc=e.target.closest(".ochip");
     if(oc){var to=getTask(oc.dataset.id);if(!to)return;
       var list=ownerList();var oi=list.indexOf(to.owner);if(oi<0)oi=0;
