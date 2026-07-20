@@ -157,6 +157,8 @@
   ];
   function statusObj(k){for(var i=0;i<STATUS.length;i++)if(STATUS[i].k===k)return STATUS[i];return STATUS[0];}
   function esc(s){return String(s).replace(/[&<>]/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[m];});}
+  // "@이름" 을 도드라지게 표시만 한다(호출/알림 기능 없음). esc 이후에 감싸므로 XSS 안전.
+  function mentionHtml(s){return esc(s).replace(/@([A-Za-z0-9가-힣_]+)/g,'<span class="mention">@$1</span>');}
   function escAttr(s){return esc(s).replace(/"/g,"&quot;");}
   function CE(){return EDITABLE?" contenteditable":"";}
   function edWhat(t){return '<div class="what"'+CE()+' data-field="what" data-id="'+t.id+'" title="'+escAttr(t.what)+'">'+esc(t.what)+'</div>';}
@@ -171,7 +173,7 @@
   }
   function chipCell(t){var s=statusObj(t.friStatus);
     return '<button class="chip '+s.cls+'" data-id="'+t.id+'"><span class="ms">'+s.icon+'</span>'+esc(t.friStatus)+'</button>';}
-  function ed(f,id,v,cls,lab){return '<div class="'+cls+'"'+CE()+' data-field="'+f+'" data-id="'+id+'"'+(lab?' data-label="'+lab+'"':'')+'>'+esc(v)+'</div>';}
+  function ed(f,id,v,cls,lab){return '<div class="'+cls+'"'+CE()+' data-field="'+f+'" data-id="'+id+'"'+(lab?' data-label="'+lab+'"':'')+'>'+mentionHtml(v)+'</div>';}
   function purposeCell(t){
     if(t.asis===undefined&&t.tobe===undefined)
       return '<div class="why"'+CE()+' data-field="why" data-id="'+t.id+'">'+esc(t.why||"")+'</div>';
@@ -180,9 +182,9 @@
       +'<div class="pl"><span class="plk tobe">TO-BE</span><span class="ped"'+CE()+' data-field="tobe" data-id="'+t.id+'">'+esc(t.tobe||"")+'</span></div>'
       +'</div>';
   }
-  var ROSTER=["이해원 차장","이재현 대리","정유나 대리","UX 파트"];
+  var ROSTER=["UX 파트","서비스 파트","DEV 파트"];
   function ownerList(){return ["—"].concat(ROSTER);}
-  function ownerInitials(name){if(!name||name==="—")return "";return String(name).split(/\s+/)[0].slice(0,2);}
+  function ownerInitials(name){if(!name||name==="—")return "";return String(name).split(/\s+/)[0].slice(0,3);}   // UX / 서비스 / DEV
   function ownerCell(t){
     var label=(t.owner&&t.owner!=="—")?t.owner:"미정";
     var idx=(!t.owner||t.owner==="—")?0:(ROSTER.indexOf(t.owner)+1);if(idx<0)idx=0;
@@ -262,8 +264,10 @@
     touch(t);saveLocal();
   });
   tb.addEventListener("focusout",function(e){
-    var f=e.target&&e.target.dataset&&e.target.dataset.field;
-    if(f==="pri"||f==="wedPct")render();
+    var el=e.target,f=el&&el.dataset&&el.dataset.field;
+    if(f==="pri"||f==="wedPct"){render();return;}
+    // 타이핑 중에는 평문으로 두고, 포커스가 빠질 때 @멘션 강조를 다시 입힌다(캐럿 안 튐)
+    if(!readOnly&&el&&el.classList&&el.classList.contains("note"))el.innerHTML=mentionHtml(el.innerText);
   });
   tb.addEventListener("change",function(e){
     if(readOnly)return;

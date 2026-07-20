@@ -89,6 +89,8 @@ body.dark .row.history{background:#181818;}
   color:var(--mut);background:transparent;border:1.5px solid var(--line2);cursor:pointer;}
 .addhist:hover{border-color:var(--ink);color:var(--ink);}
 .addhist .ms{font-size:1.15rem;}
+/* "@이름" 멘션 — 표시 전용 강조(호출 아님) */
+.mention{font-weight:700;color:var(--red);}
 /* ---- History entry (child) — the project's timeline, same on Mon/Wed/Fri ---- */
 .row.history{align-items:center;}
 .history .histwhat{font-size:.98rem;}
@@ -143,6 +145,8 @@ body.dark .fdate::-webkit-calendar-picker-indicator{filter:invert(1) brightness(
   letter-spacing:.02em;white-space:nowrap;border:1.5px solid var(--ink);height:2.5rem;padding:0 .8rem;background:var(--paper);cursor:pointer;
   color:var(--ink);user-select:none;transition:all .12s;box-sizing:border-box;}
 .chip .ms,.ochip .ms{font-size:1.1rem;}
+/* 모든 상태칩이 같은 너비(가장 긴 "진행중" 기준) — 그래야 한 일·담당·기한 열이 행마다 어긋나지 않는다 */
+.chip{min-width:6rem;justify-content:center;}
 .chip:hover{background:#f4f4f4;}
 .ochip:hover{filter:brightness(.95);}
 .ochip .oname{display:inline-flex;align-items:center;gap:.45rem;}   /* full name — desktop table */
@@ -228,8 +232,9 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row.project .pri{display:none;}
   .row.project .phead{grid-column:1 / -1;grid-row:1;flex-wrap:wrap;gap:.35rem .5rem;}
   .row.project .phead .what{white-space:normal;font-size:1.18rem;overflow:visible;text-overflow:clip;}
-  .row.project .addhist{width:1.9rem;height:1.9rem;border:none;color:var(--faint);}
-  .row.project .addhist:hover{color:var(--ink);}
+  .row.project .addhist{width:2.5rem;height:2.5rem;border:1.5px solid var(--line2);color:var(--ink);}
+  .row.project .addhist .ms{font-size:1.5rem;}
+  .row.project .addhist:hover{border-color:var(--ink);}
   .row.project .ochip{grid-column:1;grid-row:2;}
   .row.project .duec{grid-column:2;grid-row:2;}
 
