@@ -239,8 +239,8 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row.project .sp{display:none;}
   .row.project .phead{grid-column:1 / -1;grid-row:1;flex-wrap:wrap;gap:.35rem .5rem;}
   .row.project .phead .what{white-space:normal;font-size:1.18rem;overflow:visible;text-overflow:clip;}
-  .row.project .addhist{width:2.5rem;height:2.5rem;border:1.5px solid var(--line2);color:var(--ink);}
-  .row.project .addhist .ms{font-size:1.5rem;}
+  .row.project .addhist{width:2rem;height:2rem;border:1.5px solid var(--line2);color:var(--ink);}   /* 제목(1.18rem)에 비례 */
+  .row.project .addhist .ms{font-size:1.2rem;}
   .row.project .addhist:hover{border-color:var(--ink);}
   .row.project .duec{grid-column:1;grid-row:2;}
   .row.project .prog{grid-column:2;grid-row:2;}   /* 전체 진행률(읽기 전용)은 기한 옆에 */
