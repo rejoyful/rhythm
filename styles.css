@@ -141,7 +141,19 @@ body.dark .fdate::-webkit-calendar-picker-indicator{filter:invert(1) brightness(
 .bar{flex:1;display:flex;gap:2px;height:1.4rem;min-width:0;}
 .seg{flex:1;height:100%;background:var(--empty);cursor:pointer;transition:background .1s;}
 .seg:hover{filter:brightness(.92);}
+/* 채워진 칸은 위치에 따라 색이 이어진다 — 저조(붉은)에서 완료(초록)까지 자연스러운 램프.
+   10%면 앞쪽 붉은 칸만, 100%면 초록까지 다 차서 한눈에 진행 수준이 읽힌다. */
 .seg.on{background:var(--fill);}
+.seg.on[data-i="0"]{background:#e05a4d;}
+.seg.on[data-i="1"]{background:#e4704a;}
+.seg.on[data-i="2"]{background:#e78847;}
+.seg.on[data-i="3"]{background:#e79f45;}
+.seg.on[data-i="4"]{background:#e0b447;}
+.seg.on[data-i="5"]{background:#cdbd4a;}
+.seg.on[data-i="6"]{background:#adba4f;}
+.seg.on[data-i="7"]{background:#8ab455;}
+.seg.on[data-i="8"]{background:#66ac5a;}
+.seg.on[data-i="9"]{background:#43a05e;}
 .prog .pval{font-family:var(--mono);font-size:.84rem;color:var(--ink);font-weight:700;white-space:nowrap;min-width:2.9rem;text-align:right;}
 .prog .pval .sign{color:var(--mut);font-weight:400;}
 .prog.total .seg{cursor:default;}
