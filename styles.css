@@ -253,7 +253,7 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row.project .addhist .ms{font-size:1.2rem;}
   .row.project .addhist:hover{border-color:var(--ink);}
   .row.project .duec{grid-column:1;grid-row:2;}
-  .row.project .prog{grid-column:2;grid-row:2;}   /* 전체 진행률(읽기 전용)은 기한 옆에 */
+  .row.project .prog{grid-column:2;grid-row:2;}   /* 전체 진행률은 기한 우측에 */
 
   /* History row: flush-left. 한 일 on top; a compact icon meta (상태 · 담당 · 기한) below, packed left. */
   .row.history{grid-template-columns:auto auto auto 1fr!important;margin-left:0;column-gap:.5rem;}
@@ -262,10 +262,12 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row.history .chip{grid-column:1;grid-row:2;}
   .row.history .ochip{grid-column:2;grid-row:2;}
   .row.history .duec{grid-column:3;grid-row:2;}
-  /* 진행률은 손가락으로 누르기 쉽게 한 줄을 통째로 쓴다(칸당 ≈30px) */
-  .row.history .prog{grid-column:1 / -1;grid-row:3;}
-  .row .bar{height:1.6rem;}
-  .row .prog .pval{font-size:.78rem;min-width:2.7rem;}
+  /* 진행률은 우측에 간소하게 — 미니 바 + %. 칸이 좁아 오터치가 나므로 칸 클릭은 끄고,
+     영역 전체를 탭하면 10%씩 오르게 한다(app.js 의 .prog 핸들러). */
+  .row .prog{gap:.35rem;justify-self:end;}
+  .row .prog .bar{flex:none;width:3.2rem;height:.7rem;gap:1px;pointer-events:none;}
+  .row .prog .pval{font-size:.78rem;min-width:2.6rem;}
+  .row.history .prog{grid-column:4;grid-row:2;}
 
   /* --- lighten the meta so a card reads as info, not a wall of buttons --- */
   .row .chip{height:1.9rem;min-height:1.9rem;min-width:4.7rem;padding:0 .5rem;font-size:.8rem;gap:.25rem;justify-content:center;}   /* uniform width — all statuses floored to 진행중 (widest) */

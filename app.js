@@ -311,6 +311,12 @@
       // 상태 자동연동은 하위 업무만. 프로젝트까지 100%→완료로 바꾸면 다음 주차에 통째로 사라진다.
       if(ts.parent){if(nv===100)ts.friStatus="완료";else if(ts.friStatus==="완료")ts.friStatus="진행중";}
       touch(ts);saveLocal();render();}return;}
+    // 모바일에선 바를 작게 줄여 표시만 하므로(칸이 좁아 오터치), 진행률 영역을 탭하면 10%씩 오른다
+    var pgc=e.target.closest(".prog");
+    if(pgc){var tp=getTask(pgc.dataset.id);if(tp){
+      var nx=pctOf(tp)>=100?0:pctOf(tp)+PSTEP;tp.wedPct=nx;
+      if(tp.parent){if(nx===100)tp.friStatus="완료";else if(tp.friStatus==="완료")tp.friStatus="진행중";}
+      touch(tp);saveLocal();render();}return;}
     var oc=e.target.closest(".ochip");
     if(oc){var to=getTask(oc.dataset.id);if(!to)return;
       var list=ownerList();var oi=list.indexOf(to.owner);if(oi<0)oi=0;
