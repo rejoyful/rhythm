@@ -183,7 +183,7 @@
       +'<div class="pl"><span class="plk tobe">TO-BE</span><span class="ped"'+CE()+' data-field="tobe" data-id="'+t.id+'">'+esc(t.tobe||"")+'</span></div>'
       +'</div>';
   }
-  var ROSTER=["UX 파트","서비스 파트","DEV 파트"];
+  var ROSTER=["UX 파트","서비스 파트","DEV 파트","Edu 파트"];
   function ownerList(){return ["—"].concat(ROSTER);}
   function ownerInitials(name){if(!name||name==="—")return "";return String(name).split(/\s+/)[0].slice(0,3);}   // UX / 서비스 / DEV
   function ownerCell(t){
