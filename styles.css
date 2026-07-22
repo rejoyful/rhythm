@@ -213,8 +213,8 @@ body.dark .ochip:hover{filter:brightness(1.14);}
    Only two row types exist now, so the mobile rules stay simple.
    ============================================================ */
 @media (max-width:1279px){
-  html{font-size:clamp(14px,3.9vw,16px);}
-  body{height:auto;min-height:100dvh;overflow-x:hidden;overflow-y:auto;padding:1.1rem 1rem 2.2rem;}
+  html{font-size:clamp(14px,3.9vw,16px);overflow-x:clip;}   /* clip: 세로 스크롤 안 깨고 가로만 차단 */
+  body{height:auto;min-height:100dvh;overflow-x:hidden;overflow-y:auto;overscroll-behavior-x:none;padding:1.1rem 1rem 2.2rem;}
 
   header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.4rem .6rem;}
   h1{font-size:1.6rem;}
@@ -229,11 +229,15 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .today{display:none;}
 
   .sheet{flex:none;margin-top:.9rem;}
-  .tbody{display:block;overflow:visible;scrollbar-gutter:auto;border-top:2px solid var(--ink);}
+  /* overflow-x:clip — 스와이프 중 카드 translate·빨간 삭제영역이 문서 가로폭을 넓혀
+     "화면 축소 맞춤"이 걸리던 현상 차단. overflow-y:visible 이라 페이지 세로 스크롤은 그대로. */
+  .tbody{display:block;overflow-x:clip;overflow-y:visible;scrollbar-gutter:auto;border-top:2px solid var(--ink);}
 
   /* Continuous list (like the desktop table): flush-left rows, no card boxes/indent, no leading
      numbers. A project + its history read as one attached block — white header, grey history rows. */
-  .row{position:relative;overflow:visible;column-gap:.55rem;row-gap:.5rem;align-items:center;
+  /* touch-action:pan-y — 세로 스크롤만 브라우저에 맡기고 가로 제스처는 JS 스와이프로.
+     핀치/더블탭 확대도 이 영역에선 비활성 → 스와이프 중 화면이 확대·축소되지 않는다. */
+  .row{position:relative;overflow:visible;touch-action:pan-y;column-gap:.55rem;row-gap:.5rem;align-items:center;
     padding:.8rem 1rem;border:none;border-bottom:1px solid var(--line);margin:0;}
   .row .dragh{display:none!important;}
   .row .del{display:none!important;}                 /* mobile deletes via swipe, not a button */
