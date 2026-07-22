@@ -182,6 +182,27 @@ body.dark .ochip.o1{background:#192c45;color:#9ec3ee;border-color:#2c4a6e;}
 body.dark .ochip.o2{background:#1d3317;color:#a8d68a;border-color:#34542a;}
 body.dark .ochip.o3{background:#352810;color:#e7b660;border-color:#57401b;}
 body.dark .ochip.o4{background:#371f29;color:#ea9fb6;border-color:#583341;}
+/* 부문(division) 칩 — 프로젝트 앞(번호 자리). 담당 칩처럼 클릭해 순환. 폭 통일. */
+.divchip{justify-self:start;align-self:center;display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--body);font-size:.82rem;font-weight:700;letter-spacing:-.01em;white-space:nowrap;
+  border:1.5px solid var(--line2);height:1.9rem;min-width:3.4rem;padding:0 .5rem;background:var(--paper);color:var(--ink);cursor:pointer;box-sizing:border-box;transition:filter .12s;}
+.divchip:hover{filter:brightness(.96);}
+.divchip.d0{background:var(--paper);color:var(--mut);border-color:var(--line2);}
+.divchip.d1{background:#e2ebfb;color:#294c86;border-color:#bcd0ee;}   /* 출판 */
+.divchip.d2{background:#ece1fb;color:#5b3a8e;border-color:#d3bef0;}   /* 심리 */
+.divchip.d3{background:#dcefdd;color:#2e6b39;border-color:#b6ddb9;}   /* 교육 */
+.divchip.d4{background:#fde2d3;color:#9a4a1e;border-color:#f3c3a3;}   /* 메디컬 */
+body.dark .divchip.d1{background:#182740;color:#9fc0ee;border-color:#2b456a;}
+body.dark .divchip.d2{background:#241a38;color:#c3a6ea;border-color:#3f2f5e;}
+body.dark .divchip.d3{background:#16281a;color:#a6d6a8;border-color:#2f4a34;}
+body.dark .divchip.d4{background:#341f12;color:#e6a071;border-color:#573a24;}
+/* 부문 필터바 — 전체·출판·심리·교육·메디컬(각 개수). 선택 시 채워짐. */
+.divbar{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem;}
+.dfil{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--body);font-size:.9rem;font-weight:700;
+  border:1.5px solid var(--line2);background:var(--paper);color:var(--mut);padding:.4rem .85rem;cursor:pointer;transition:all .12s;}
+.dfil:hover{border-color:var(--ink);color:var(--ink);}
+.dfil.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.dfil .dfn{font-family:var(--mono);font-size:.72rem;font-weight:700;opacity:.65;}
 body.dark .ochip:hover{filter:brightness(1.14);}
 .chip.done{background:var(--ink);color:var(--paper);border-color:var(--ink);}
 .chip.hold{color:var(--red);border-color:var(--red);}
@@ -251,17 +272,18 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row.swiping{transition:none;z-index:3;}
   .row.willdel::after{background:#b3141b;}
 
-  /* Project header row: name (+ ghost) on top; a light meta line (담당 · 기한) below, packed left. */
-  .row.project{grid-template-columns:auto minmax(0,1fr)!important;}
+  /* Project header card: 부문(맨 위 라벨) → 이름 → 기한·진행률(아래 한 줄). */
+  .row.project{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;}
   .row.project .pri{display:none;}
   .row.project .sp{display:none;}
-  .row.project .phead{grid-column:1 / -1;grid-row:1;flex-wrap:wrap;gap:.35rem .5rem;}
+  .row.project .divchip{grid-column:1 / -1;grid-row:1;justify-self:start;}
+  .row.project .phead{grid-column:1 / -1;grid-row:2;flex-wrap:wrap;gap:.35rem .5rem;}
   .row.project .phead .what{white-space:normal;font-size:1.18rem;overflow:visible;text-overflow:clip;}
   .row.project .addhist{width:2rem;height:2rem;border:1.5px solid var(--line2);color:var(--ink);}   /* 제목(1.18rem)에 비례 */
   .row.project .addhist .ms{font-size:1.2rem;}
   .row.project .addhist:hover{border-color:var(--ink);}
-  .row.project .duec{grid-column:1;grid-row:2;}
-  .row.project .prog{grid-column:2;grid-row:2;}   /* 전체 진행률은 기한 우측에 */
+  .row.project .duec{grid-column:1;grid-row:3;}
+  .row.project .prog{grid-column:2;grid-row:3;}   /* 전체 진행률은 기한 우측에 */
 
   /* History row: flush-left. 한 일 on top; a compact icon meta (상태 · 담당 · 기한) below, packed left. */
   .row.history{grid-template-columns:auto auto auto 1fr!important;margin-left:0;column-gap:.5rem;}

@@ -70,7 +70,7 @@
     var ns=new Date(curStart);ns.setDate(ns.getDate()+7);var newId=isoWeekId(ns);
     while(weeksList.indexOf(newId)>=0){ns.setDate(ns.getDate()+7);newId=isoWeekId(ns);}
     var carried=state.tasks.filter(function(t){return !t._del&&t.friStatus!=="완료";}).map(function(t){
-      return {id:t.id,parent:(t.parent||null),pri:t.pri,what:t.what,asis:t.asis,tobe:t.tobe,owner:t.owner,due:t.due,wedPct:t.wedPct,wedNote:"—",friStatus:"진행중",friNote:"—",_v:Date.now()};});   // 진행률은 이월(작업이 이어지므로)
+      return {id:t.id,parent:(t.parent||null),pri:t.pri,what:t.what,division:t.division,asis:t.asis,tobe:t.tobe,owner:t.owner,due:t.due,wedPct:t.wedPct,wedNote:"—",friStatus:"진행중",friNote:"—",_v:Date.now()};});   // 부문·진행률은 이월(작업이 이어지므로)
     var keep={};carried.forEach(function(t){keep[t.id]=1;});
     carried.forEach(function(t){if(t.parent&&!keep[t.parent])t.parent=null;});
     var data=normalize({start:isoDate(ns),label:weekLabel(ns),title:state.title,part:state.part,tasks:carried});
@@ -206,6 +206,23 @@
       +'<span class="oini">'+(ini?esc(ini):'<span class="ms">person</span>')+'</span>'
       +'<span class="oname"><span class="ms">person</span>'+esc(label)+'</span></button>';
   }
+  // ----- 부문(division): 프로젝트를 출판/심리/교육/메디컬 로 분류. 담당처럼 클릭해 순환. -----
+  var DIVISIONS=["출판","심리","교육","메디컬"];
+  function divList(){return [""].concat(DIVISIONS);}                    // "" = 미지정
+  function divIdx(v){var i=DIVISIONS.indexOf(v||"");return i<0?0:i+1;}  // 0=미지정, 1..4
+  function divCell(t){var v=t.division||"";
+    return '<button class="divchip d'+divIdx(v)+'" data-field="division" data-id="'+t.id+'" title="부문: '+(v||"미지정")+'">'+esc(v||"미지정")+'</button>';}
+  // 부문별 보기 필터도 "보는 사람"의 설정이라 공유 데이터가 아니라 localStorage. "" = 전체
+  var DIV_LS="axp_divfilter_v1",viewDiv="";
+  try{viewDiv=localStorage.getItem(DIV_LS)||"";}catch(e){viewDiv="";}
+  function setViewDiv(v){viewDiv=v||"";try{localStorage.setItem(DIV_LS,viewDiv);}catch(e){}render();}
+  function renderDivBar(){var bar=document.getElementById("divbar");if(!bar)return;
+    var tops=childrenOf(null);
+    var items=[{v:"",label:"전체",n:tops.length}].concat(DIVISIONS.map(function(d){
+      return {v:d,label:d,n:tops.filter(function(p){return(p.division||"")===d;}).length};}));
+    bar.innerHTML=items.map(function(it){
+      return '<button class="dfil'+(viewDiv===it.v?" on":"")+(it.v?" d"+divIdx(it.v):"")+'" data-div="'+escAttr(it.v)+'">'
+        +esc(it.label)+'<span class="dfn">'+it.n+'</span></button>';}).join("");}
   function dueToISO(d){if(!d)return"";if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d;
     var m=/^(\d{1,2})[\/.\-](\d{1,2})$/.exec(d);if(m)return new Date().getFullYear()+"-"+pad(+m[1])+"-"+pad(+m[2]);return"";}
   function dueCell(t){var iso=dueToISO(t.due);var md=iso?iso.slice(5).replace("-","."):"";
@@ -220,8 +237,9 @@
   function toggleCollapse(id){if(collapsed[id])delete collapsed[id];else collapsed[id]=1;
     try{localStorage.setItem(COL_LS,JSON.stringify(collapsed));}catch(e){}render();}
   function buildOrder(){var res=[];(function walk(pid,depth){childrenOf(pid).forEach(function(t){
+    if(depth===0&&viewDiv&&(t.division||"")!==viewDiv)return;   // 부문 필터: 다른 부문 프로젝트(+하위) 숨김
     res.push({t:t,depth:depth});
-    if(!(depth===0&&isCollapsed(t.id)))walk(t.id,depth+1);   // 접힌 프로젝트는 하위를 건너뜀
+    if(!(depth===0&&isCollapsed(t.id)))walk(t.id,depth+1);      // 접힌 프로젝트는 하위를 건너뜀
   });})(null,0);return res;}
   function isDesc(aId,bId){var t=getTask(aId),g=0;while(t&&t.parent&&g++<200){if(t.parent===bId)return true;t=getTask(t.parent);}return false;}
   function renumberAll(){
@@ -234,7 +252,7 @@
   // HISTORY log — one line each: status + what(한 일) + owner + date.
   function projectHeaderCells(t){
     var kids=childrenOf(t.id).length,col=isCollapsed(t.id);
-    return '<div class="pri"'+CE()+' data-field="pri" data-id="'+t.id+'">'+pad(t.pri)+'</div>'
+    return divCell(t)   // 앞 번호(01) 자리 → 부문 칩(출판/심리/교육/메디컬). 클릭해 순환.
       +'<div class="phead">'
       +'<button class="coltog'+(kids?"":" off")+'" data-id="'+t.id+'" title="'+(col?"펼치기":"접기")+'" aria-label="'+(col?"펼치기":"접기")+'"><span class="ms">'+(col?"chevron_right":"expand_more")+'</span></button>'
       +'<div class="what"'+CE()+' data-field="what" data-id="'+t.id+'" title="'+escAttr(t.what)+'">'+esc(t.what)+'</div>'
@@ -255,6 +273,7 @@
     var dtt=document.getElementById("docTitle"),dpp=document.getElementById("docPart");if(dtt)dtt.contentEditable=EDITABLE;if(dpp)dpp.contentEditable=EDITABLE;
     var ab=document.getElementById("addBtn");if(ab)ab.style.display=EDITABLE?"":"none";
 
+    renderDivBar();
     var order=buildOrder();
     var tb=document.getElementById("tbody");
     tb.innerHTML=order.map(function(o){
@@ -330,6 +349,10 @@
       var nx=pctOf(tp)>=100?0:pctOf(tp)+PSTEP;tp.wedPct=nx;
       if(tp.parent){if(nx===100)tp.friStatus="완료";else if(tp.friStatus==="완료")tp.friStatus="진행중";}
       touch(tp);saveLocal();render();}return;}
+    var dvc=e.target.closest(".divchip");
+    if(dvc){var td=getTask(dvc.dataset.id);if(!td)return;
+      var dl=divList();var di=dl.indexOf(td.division||"");if(di<0)di=0;
+      td.division=dl[(di+1)%dl.length];touch(td);saveLocal();render();return;}
     var oc=e.target.closest(".ochip");
     if(oc){var to=getTask(oc.dataset.id);if(!to)return;
       var list=ownerList();var oi=list.indexOf(to.owner);if(oi<0)oi=0;
@@ -489,7 +512,7 @@
     var p=parseTask(document.getElementById("taskInput").value);
     if(!p.what){alert("프로젝트명을 입력해 주세요.");return;}
     var maxp=state.tasks.reduce(function(m,t){return t._del?m:Math.max(m,t.pri||0);},0);
-    state.tasks.push({id:"t"+Date.now(),parent:null,pri:maxp+1,what:p.what,asis:"",tobe:"",owner:p.owner||"—",due:p.due||"—",
+    state.tasks.push({id:"t"+Date.now(),parent:null,pri:maxp+1,what:p.what,division:"",asis:"",tobe:"",owner:p.owner||"—",due:p.due||"—",
       wedPct:null,wedNote:"—",friStatus:"진행중",friNote:"—",_v:Date.now()});
     saveLocal();closeModal();render();
   });
@@ -504,6 +527,8 @@
   [docTitle,docPart].forEach(function(el){el.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();el.blur();}});});
   document.getElementById("weekSel").addEventListener("change",function(e){switchWeek(e.target.value);});
   document.getElementById("newWeekBtn").addEventListener("click",startNewWeek);
+  var divbarEl=document.getElementById("divbar");   // 부문 필터바
+  if(divbarEl)divbarEl.addEventListener("click",function(e){var b=e.target.closest(".dfil");if(b)setViewDiv(b.dataset.div);});
 
   // 서식 없는 순수 텍스트로만 붙여넣기 (문서 기본 폰트 유지)
   document.addEventListener("paste",function(e){
