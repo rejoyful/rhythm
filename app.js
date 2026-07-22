@@ -220,9 +220,14 @@
     var tops=childrenOf(null);
     var items=[{v:"",label:"전체",n:tops.length}].concat(DIVISIONS.map(function(d){
       return {v:d,label:d,n:tops.filter(function(p){return(p.division||"")===d;}).length};}));
-    bar.innerHTML=items.map(function(it){
+    var chips=items.map(function(it){
       return '<button class="dfil'+(viewDiv===it.v?" on":"")+(it.v?" d"+divIdx(it.v):"")+'" data-div="'+escAttr(it.v)+'">'
-        +esc(it.label)+'<span class="dfn">'+it.n+'</span></button>';}).join("");}
+        +esc(it.label)+'<span class="dfn">'+it.n+'</span></button>';}).join("");
+    var opts=items.map(function(it){
+      return '<option value="'+escAttr(it.v)+'"'+(viewDiv===it.v?" selected":"")+'>'+esc(it.label)+' ('+it.n+')</option>';}).join("");
+    // 데스크톱: 칩(.dfilset) / 모바일: 셀렉박스(.dfsel) — CSS로 전환
+    bar.innerHTML='<div class="dfilset">'+chips+'</div>'
+      +'<div class="dfsel"><select id="divsel" class="fsel" aria-label="부문 필터">'+opts+'</select><span class="ms selcar">expand_more</span></div>';}
   function dueToISO(d){if(!d)return"";if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d;
     var m=/^(\d{1,2})[\/.\-](\d{1,2})$/.exec(d);if(m)return new Date().getFullYear()+"-"+pad(+m[1])+"-"+pad(+m[2]);return"";}
   function dueCell(t){var iso=dueToISO(t.due);var md=iso?iso.slice(5).replace("-","."):"";
@@ -526,8 +531,11 @@
   [docTitle,docPart].forEach(function(el){el.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();el.blur();}});});
   document.getElementById("weekSel").addEventListener("change",function(e){switchWeek(e.target.value);});
   document.getElementById("newWeekBtn").addEventListener("click",startNewWeek);
-  var divbarEl=document.getElementById("divbar");   // 부문 필터바
-  if(divbarEl)divbarEl.addEventListener("click",function(e){var b=e.target.closest(".dfil");if(b)setViewDiv(b.dataset.div);});
+  var divbarEl=document.getElementById("divbar");   // 부문 필터바 (데스크톱 칩 / 모바일 셀렉)
+  if(divbarEl){
+    divbarEl.addEventListener("click",function(e){var b=e.target.closest(".dfil");if(b)setViewDiv(b.dataset.div);});
+    divbarEl.addEventListener("change",function(e){if(e.target.id==="divsel")setViewDiv(e.target.value);});
+  }
 
   // 서식 없는 순수 텍스트로만 붙여넣기 (문서 기본 폰트 유지)
   document.addEventListener("paste",function(e){
