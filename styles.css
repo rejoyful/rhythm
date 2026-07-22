@@ -197,7 +197,7 @@ body.dark .divchip.d2{background:#241a38;color:#c3a6ea;border-color:#3f2f5e;}
 body.dark .divchip.d3{background:#16281a;color:#a6d6a8;border-color:#2f4a34;}
 body.dark .divchip.d4{background:#341f12;color:#e6a071;border-color:#573a24;}
 /* 부문 필터바 — 전체·출판·심리·교육·메디컬(각 개수). 선택 시 채워짐. */
-.divbar{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem;}
+.divbar{display:flex;flex-wrap:wrap;gap:.5rem;justify-self:center;align-items:center;min-width:0;}   /* 헤더 중앙(옛 주차 라벨 자리)에 통합 */
 .dfil{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--body);font-size:.9rem;font-weight:700;
   border:1.5px solid var(--line2);background:var(--paper);color:var(--mut);padding:.4rem .85rem;cursor:pointer;transition:all .12s;}
 .dfil:hover{border-color:var(--ink);color:var(--ink);}
@@ -246,7 +246,7 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .selwrap{min-width:0;}
   .fsel{font-size:.82rem;height:2.7rem;}
   #newWeekBtn{display:none;}
-  .weekwrap{display:none;}
+  .divbar{order:3;width:100%;justify-content:flex-start;margin-top:.15rem;}   /* 모바일: 헤더 아래 줄로 */
   .today{display:none;}
 
   .sheet{flex:none;margin-top:.9rem;}

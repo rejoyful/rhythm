@@ -268,8 +268,7 @@
 
   function render(){
     EDITABLE=!readOnly;
-    document.getElementById("today").textContent=fmtToday(new Date());
-    document.getElementById("weekLabel").textContent=(state.label||weekLabel(new Date()))+(readOnly?"  ·  보기 전용":"");
+    document.getElementById("today").textContent=fmtToday(new Date())+(readOnly?"  ·  보기 전용":"");   // 중앙 주차 라벨 제거 → 보기전용은 우측 날짜에 표기
     var dtt=document.getElementById("docTitle"),dpp=document.getElementById("docPart");if(dtt)dtt.contentEditable=EDITABLE;if(dpp)dpp.contentEditable=EDITABLE;
     var ab=document.getElementById("addBtn");if(ab)ab.style.display=EDITABLE?"":"none";
 
