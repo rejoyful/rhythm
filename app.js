@@ -157,8 +157,19 @@
   ];
   function statusObj(k){for(var i=0;i<STATUS.length;i++)if(STATUS[i].k===k)return STATUS[i];return STATUS[0];}
   function esc(s){return String(s).replace(/[&<>]/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[m];});}
-  // "@이름" 을 도드라지게 표시만 한다(호출/알림 기능 없음). esc 이후에 감싸므로 XSS 안전.
-  function mentionHtml(s){return esc(s).replace(/@([A-Za-z0-9가-힣_]+)/g,'<span class="mention">@$1</span>');}
+  // 업무내용 렌더: (1) http(s) 링크 → 새 창 하이퍼링크, (2) "@이름" 강조. 둘 다 표시 전용.
+  // URL·텍스트를 각각 이스케이프해 삽입하므로 XSS 안전(http(s)만 매칭돼 javascript: 등은 배제).
+  function mentionHtml(s){
+    s=String(s);
+    function plain(t){return esc(t).replace(/@([A-Za-z0-9가-힣_]+)/g,'<span class="mention">@$1</span>');}
+    var re=/https?:\/\/[^\s<]+[^\s<.,;:!?)\]}'"]/g,out="",last=0,m;
+    while((m=re.exec(s))){
+      out+=plain(s.slice(last,m.index))
+        +'<a class="tlink" href="'+escAttr(m[0])+'" target="_blank" rel="noopener noreferrer">'+esc(m[0])+'</a>';
+      last=m.index+m[0].length;
+    }
+    return out+plain(s.slice(last));
+  }
   function escAttr(s){return esc(s).replace(/"/g,"&quot;");}
   function CE(){return EDITABLE?" contenteditable":"";}
   function edWhat(t){return '<div class="what"'+CE()+' data-field="what" data-id="'+t.id+'" title="'+escAttr(t.what)+'">'+esc(t.what)+'</div>';}
@@ -292,6 +303,8 @@
   tb.addEventListener("click",function(e){
     var ct=e.target.closest(".coltog");
     if(ct){toggleCollapse(ct.dataset.id);return;}     // 접기/펼치기는 보기 전용 주차에서도 동작
+    var lk=e.target.closest("a.tlink");               // 업무내용의 링크는 새 창으로(편집·보기 전용 모두)
+    if(lk){e.preventDefault();window.open(lk.href,"_blank","noopener");return;}
     if(readOnly)return;
     var ah=e.target.closest(".addhist");
     if(ah){var pp=getTask(ah.dataset.id);if(pp){

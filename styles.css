@@ -91,6 +91,10 @@ body.dark .row.history{background:#181818;}
 .addhist .ms{font-size:1.15rem;}
 /* "@이름" 멘션 — 표시 전용 강조(호출 아님) */
 .mention{font-weight:700;color:var(--red);}
+/* 업무내용 안의 링크 — 새 창으로 열림. 멘션(빨강)과 구분되게 파란 밑줄 */
+.tlink{color:#2563eb;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere;cursor:pointer;}
+.tlink:hover{color:#1d4ed8;}
+body.dark .tlink{color:#7ab0ff;}
 /* 프로젝트 접기/펼치기 */
 .coltog{flex:none;display:inline-grid;place-items:center;width:1.7rem;height:1.7rem;background:transparent;border:none;color:var(--mut);cursor:pointer;}
 .coltog:hover{color:var(--ink);}
