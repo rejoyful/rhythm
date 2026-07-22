@@ -224,7 +224,7 @@
       return '<button class="dfil'+(viewDiv===it.v?" on":"")+(it.v?" d"+divIdx(it.v):"")+'" data-div="'+escAttr(it.v)+'">'
         +esc(it.label)+'<span class="dfn">'+it.n+'</span></button>';}).join("");
     var opts=items.map(function(it){
-      return '<option value="'+escAttr(it.v)+'"'+(viewDiv===it.v?" selected":"")+'>'+esc(it.label)+' ('+it.n+')</option>';}).join("");
+      return '<option value="'+escAttr(it.v)+'"'+(viewDiv===it.v?" selected":"")+'>'+esc(it.label)+'</option>';}).join("");   // 셀렉엔 개수 표기 생략
     // 데스크톱: 칩(.dfilset) / 모바일: 셀렉박스(.dfsel) — CSS로 전환
     bar.innerHTML='<div class="dfilset">'+chips+'</div>'
       +'<div class="dfsel"><select id="divsel" class="fsel" aria-label="부문 필터">'+opts+'</select><span class="ms selcar">expand_more</span></div>';}

@@ -200,7 +200,8 @@ body.dark .divchip.d4{background:#341f12;color:#e6a071;border-color:#573a24;}
 .divbar{display:flex;justify-self:center;align-items:center;min-width:0;}   /* 헤더 중앙(옛 주차 라벨 자리)에 통합 */
 .dfilset{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;}   /* 데스크톱: 칩 목록 */
 .dfsel{position:relative;display:none;align-items:center;}            /* 모바일: 셀렉박스로 전환 */
-.dfsel .fsel{width:auto;min-width:8.5rem;}
+.dfsel .fsel{width:auto;min-width:4.6rem;padding:.42rem 1.4rem .42rem .55rem;}   /* 좁은 폰에서 한 줄에 들어가도록 컴팩트 */
+.dfsel .selcar{right:.35rem;font-size:1rem;}
 .dfil{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--body);font-size:.9rem;font-weight:700;
   border:1.5px solid var(--line2);background:var(--paper);color:var(--mut);padding:.4rem .85rem;cursor:pointer;transition:all .12s;}
 .dfil:hover{border-color:var(--ink);color:var(--ink);}
@@ -243,13 +244,13 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.4rem .6rem;}
   h1{font-size:1.6rem;}
   .part{font-size:1rem;padding-left:.6rem;}
-  .brand{order:1;min-width:0;flex-wrap:wrap;gap:.4rem .6rem;}
-  .head-right{order:2;gap:.45rem;margin-left:auto;}
+  .brand{order:1;flex:1 1 auto;min-width:0;flex-wrap:wrap;gap:.4rem .6rem;}   /* 브랜드가 남는 폭을 채워 셀렉·버튼을 우측으로 밀착 */
+  .head-right{order:3;gap:.45rem;}   /* 셀렉(order2) 오른쪽에 다크모드·+ 이 오도록 */
   .toolbar{flex-wrap:wrap;gap:.4rem;justify-content:flex-end;}
   .selwrap{min-width:0;}
   .fsel{font-size:.82rem;height:2.7rem;}
   #newWeekBtn{display:none;}
-  .divbar{order:3;width:100%;justify-content:flex-start;margin-top:.2rem;}   /* 모바일: 헤더 아래 줄로 */
+  .divbar{order:2;width:auto;align-self:center;}   /* 모바일: 다크모드 버튼 왼쪽(우측 클러스터)에 붙임 */
   .dfilset{display:none;}     /* 모바일에선 칩 숨기고 */
   .dfsel{display:flex;}       /* 셀렉박스만 */
   .today{display:none;}
