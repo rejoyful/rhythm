@@ -278,18 +278,20 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row.swiping{transition:none;z-index:3;}
   .row.willdel::after{background:#b3141b;}
 
-  /* 모바일: 부문 칩은 숨김(상단 셀렉박스로 필터). 카드는 이름(위) → 기한·진행률(아래 반반)만 — 군더더기 제거. */
-  .row.project{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;column-gap:.6rem;}
+  /* 모바일 프로젝트 카드: [▼ 이름 ······ +(우측끝 고정)], 아래 줄 [부문 · 기한 ····· 진행률]. */
+  .row.project{grid-template-columns:auto auto minmax(0,1fr)!important;column-gap:.5rem;}
   .row.project .pri{display:none;}
   .row.project .sp{display:none;}
-  .row.project .divchip{display:none;}
-  .row.project .phead{grid-column:1 / -1;grid-row:1;flex-wrap:wrap;gap:.35rem .5rem;}
+  .row.project .phead{grid-column:1 / -1;grid-row:1;padding-right:2.6rem;flex-wrap:wrap;gap:.35rem .5rem;}
   .row.project .phead .what{white-space:normal;font-size:1.18rem;overflow:visible;text-overflow:clip;}
-  .row.project .addhist{width:2rem;height:2rem;border:1.5px solid var(--line2);color:var(--ink);}   /* 제목(1.18rem)에 비례 */
+  /* + 히스토리 버튼은 카드 우측 끝에 고정 */
+  .row.project .addhist{position:absolute;top:.75rem;right:1rem;width:2rem;height:2rem;margin:0;border:1.5px solid var(--line2);color:var(--ink);}
   .row.project .addhist .ms{font-size:1.2rem;}
   .row.project .addhist:hover{border-color:var(--ink);}
-  .row.project .duec{grid-column:1;grid-row:2;}
-  .row.project .prog{grid-column:2;grid-row:2;}   /* 전체 진행률은 기한 우측에 */
+  /* 부문 칩: 기한 좌측에 작게(상태·담당 칩처럼). 클릭 순환 기능 유지. */
+  .row.project .divchip{display:inline-flex;grid-column:1;grid-row:2;align-self:center;min-width:auto;height:1.9rem;font-size:.76rem;padding:0 .45rem;}
+  .row.project .duec{grid-column:2;grid-row:2;}
+  .row.project .prog{grid-column:3;grid-row:2;}   /* 전체 진행률은 우측 */
 
   /* History row: flush-left. 한 일 on top; a compact icon meta (상태 · 담당 · 기한) below, packed left. */
   .row.history{grid-template-columns:auto auto auto 1fr!important;margin-left:0;column-gap:.5rem;}
