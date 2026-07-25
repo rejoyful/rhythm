@@ -1,9 +1,11 @@
 # 주간 리듬 미팅 (rhythm)
 
-UX 기획파트의 주간 업무를 **프로젝트 + 히스토리**로 기록·공유하는 정적 웹앱.
-Supabase 실시간 동기화 + GitHub Pages 호스팅으로, **서버 없이 브라우저만으로** 동작한다.
+UX 기획파트의 주간 업무를 **프로젝트 + 히스토리**로 기록·공유하는 웹앱.
+Supabase 실시간 동기화로 여러 사람이 동시에 편집해도 서로의 화면에 바로 반영된다.
 
-- 주소: https://rejoyful.github.io/rhythm/
+- 주소: **https://rhythm.hakjisa.kr/**
+- 배포: 이 저장소(`rejoyful/rhythm`)에 push → **팀 내부 수동 배포 시스템**이 최신 코드를 받아 배포한다.
+  즉 push만으로 자동 반영되지 않고, **배포를 한 번 실행해야** 사이트에 나타난다.
 
 ## 무엇을 하는 앱인가
 회의 때 큰 화면(윈도우·크롬)과 개인 모바일에서 함께 보며, 각자 수정하면 **모두의 화면에 실시간 반영**된다. 한 주가 끝나면 아카이빙하고 새 주차를 시작한다.
@@ -53,7 +55,8 @@ git push -u origin main --force   # 최초 1회만(덮어쓰기)
 ```
 > 이미 clone해서 쓰는 경우엔 위 init/remote 단계는 건너뛴다.
 
-3) GitHub Pages 확인: 레포 Settings → Pages → main / root → https://rejoyful.github.io/rhythm/
+3) 배포는 팀 내부 수동 배포 시스템에서 실행 → https://rhythm.hakjisa.kr/
+   (GitHub Pages는 사용하지 않는다. `rejoyful.github.io/rhythm/` 는 더 이상 열리지 않음)
 
 ## Claude Code로 작업하기
 ```
@@ -61,7 +64,7 @@ cd rhythm-project
 claude
 ```
 - 수정을 시키면 파일이 바뀌고, **턴이 끝날 때마다 `.claude/settings.json` 훅이 자동으로 커밋·푸시**한다.
-- push되면 GitHub Pages가 1~2분 내 자동 반영된다.
+- 여기까지는 GitHub 저장소만 최신이 된다. 실제 사이트에 반영하려면 **수동 배포를 한 번 실행**해야 한다.
 
 ## 수동 커밋이 필요할 때
 ```
