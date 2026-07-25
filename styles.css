@@ -192,10 +192,14 @@ body.dark .ochip.o4{background:#371f29;color:#ea9fb6;border-color:#583341;}
 .divchip.d2{background:#ece1fb;color:#5b3a8e;border-color:#d3bef0;}   /* 심리 */
 .divchip.d3{background:#dcefdd;color:#2e6b39;border-color:#b6ddb9;}   /* 교육 */
 .divchip.d4{background:#fde2d3;color:#9a4a1e;border-color:#f3c3a3;}   /* 메디컬 */
+.divchip.d5{background:#d5eef1;color:#175c66;border-color:#a5d9df;}   /* AX */
+.divchip.d6{background:#e5e6e9;color:#3b4250;border-color:#c8cbd2;}   /* 전사(전사 통합) */
 body.dark .divchip.d1{background:#182740;color:#9fc0ee;border-color:#2b456a;}
 body.dark .divchip.d2{background:#241a38;color:#c3a6ea;border-color:#3f2f5e;}
 body.dark .divchip.d3{background:#16281a;color:#a6d6a8;border-color:#2f4a34;}
 body.dark .divchip.d4{background:#341f12;color:#e6a071;border-color:#573a24;}
+body.dark .divchip.d5{background:#10262a;color:#86ccd6;border-color:#1f4750;}
+body.dark .divchip.d6{background:#22252c;color:#b9c0cd;border-color:#3a3f4a;}
 /* 부문 필터바 — 전체·출판·심리·교육·메디컬(각 개수). 선택 시 채워짐. */
 .divbar{display:flex;justify-self:center;align-items:center;min-width:0;}   /* 헤더 중앙(옛 주차 라벨 자리)에 통합 */
 .dfilset{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;}   /* 데스크톱: 칩 목록 */

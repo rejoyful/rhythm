@@ -207,9 +207,9 @@
       +'<span class="oname"><span class="ms">person</span>'+esc(label)+'</span></button>';
   }
   // ----- 부문(division): 프로젝트를 출판/심리/교육/메디컬 로 분류. 담당처럼 클릭해 순환. -----
-  var DIVISIONS=["출판","심리","교육","메디컬"];
+  var DIVISIONS=["출판","심리","교육","메디컬","AX","전사"];
   function divList(){return [""].concat(DIVISIONS);}                    // "" = 미지정
-  function divIdx(v){var i=DIVISIONS.indexOf(v||"");return i<0?0:i+1;}  // 0=미지정, 1..4
+  function divIdx(v){var i=DIVISIONS.indexOf(v||"");return i<0?0:i+1;}  // 0=미지정, 1..6
   function divCell(t){var v=t.division||"";
     return '<button class="divchip d'+divIdx(v)+'" data-field="division" data-id="'+t.id+'" title="부문: '+(v||"미지정")+'">'+esc(v||"미지정")+'</button>';}
   // 부문별 보기 필터도 "보는 사람"의 설정이라 공유 데이터가 아니라 localStorage. "" = 전체
