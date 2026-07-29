@@ -65,14 +65,13 @@
     sb.from("rhythm").select("data").eq("id",id).single().then(function(r){if(r&&r.data&&r.data.data){viewWeek=id;applyView(r.data.data);}},function(){});}
   function startNewWeek(){if(!sb){alert("DB 연결이 필요합니다.");return;}
     if(viewWeek!==curWeek){alert("현재 주차에서만 새 주차를 시작할 수 있습니다.\n주차 선택을 '현재'로 바꿔 주세요.");return;}
-    if(!confirm("이번 주를 마감하고 새 주차를 시작할까요?\n\n· 완료된 과업은 이번 주 기록에 보관됩니다.\n· 미완료 과업만 새 주차로 이월됩니다."))return;
+    if(!confirm("이번 주를 마감하고 새 주차를 시작할까요?\n\n· 달성한 Goal 은 이번 주 기록에 보관됩니다.\n· 미달성 Goal 만 새 주차로 이월됩니다."))return;
     var curStart=state.start?new Date(state.start):mondayOf(new Date());
     var ns=new Date(curStart);ns.setDate(ns.getDate()+7);var newId=isoWeekId(ns);
     while(weeksList.indexOf(newId)>=0){ns.setDate(ns.getDate()+7);newId=isoWeekId(ns);}
-    var carried=state.tasks.filter(function(t){return !t._del&&t.friStatus!=="완료";}).map(function(t){
+    var carried=state.tasks.filter(carries).map(function(t){
       return {id:t.id,parent:(t.parent||null),pri:t.pri,what:t.what,division:t.division,asis:t.asis,tobe:t.tobe,owner:t.owner,due:t.due,wedPct:t.wedPct,wedNote:"—",friStatus:"진행중",friNote:"—",_v:Date.now()};});   // 부문·진행률은 이월(작업이 이어지므로)
-    var keep={};carried.forEach(function(t){keep[t.id]=1;});
-    carried.forEach(function(t){if(t.parent&&!keep[t.parent])t.parent=null;});
+    // carries() 가 조상까지 검사하므로 부모 없는 고아가 생기지 않는다 → 최상위 승격 처리 불필요
     var data=normalize({start:isoDate(ns),label:weekLabel(ns),title:state.title,part:state.part,tasks:carried});
     sb.from("rhythm").upsert({id:newId,data:Object.assign({},data,{_by:CLIENT}),updated_at:new Date().toISOString()}).then(function(){
       sb.from("rhythm").upsert({id:"_meta",data:{current:newId}});
@@ -146,8 +145,11 @@
   });
   // Single unified view — tabs removed. Every top-level task is a PROJECT header;
   // its children are HISTORY entries. Two column templates, no per-day variants.
-  var COLS_PROJECT="4.2rem minmax(0,1fr) 13rem 9rem 10rem";        // NO | 프로젝트 | 전체 진행률 | (빈칸) | 기한
-  var COLS_HISTORY="4.2rem auto minmax(0,1fr) 13rem 9rem 10rem";   // ↳ | 상태 | 한 일 | 진행률 | 담당 | 기한
+  // 뎁스1 프로젝트: 부문칩 | 이름 | 진행률 | (빈칸) | 기한
+  // 뎁스2~3 Goal:   ↳ | 내용 | 담당 | 상태   ← 담당·상태가 프로젝트의 (빈칸)·기한 열과 정렬된다
+  var COLS_PROJECT="4.2rem minmax(0,1fr) 13rem 9rem 10rem";
+  var COLS_GOAL="4.2rem minmax(0,1fr) 9rem 10rem";
+  var MAXDEPTH=2;   // 0=프로젝트, 1=Goal, 2=세부 (최대 3단계)
   var STATUS=[
     {k:"진행중",icon:"radio_button_unchecked",cls:""},
     {k:"완료",icon:"check_circle",cls:"done"},
@@ -247,6 +249,10 @@
     if(!(depth===0&&isCollapsed(t.id)))walk(t.id,depth+1);      // 접힌 프로젝트는 하위를 건너뜀
   });})(null,0);return res;}
   function isDesc(aId,bId){var t=getTask(aId),g=0;while(t&&t.parent&&g++<200){if(t.parent===bId)return true;t=getTask(t.parent);}return false;}
+  function depthOf(id){var t=getTask(id),d=0;while(t&&t.parent&&d<200){d++;t=getTask(t.parent);}return d;}   // 0=프로젝트
+  function subDepth(id){var kids=childrenOf(id),m=0;kids.forEach(function(k){var v=1+subDepth(k.id);if(v>m)m=v;});return m;}  // 자기 아래로 몇 단인지
+  // 이월 대상: 자신과 모든 조상이 미완료일 때만. (부모가 마감되면 자손도 함께 이번 주 기록에 남는다)
+  function carries(t){var cur=t,g=0;while(cur&&g++<200){if(cur._del||cur.friStatus==="완료")return false;if(!cur.parent)return true;cur=getTask(cur.parent);}return true;}
   function renumberAll(){
     var pids=[null].concat(state.tasks.map(function(t){return t.id;}));
     pids.forEach(function(pid){childrenOf(pid).forEach(function(t,i){if(t.pri!==i+1){t.pri=i+1;touch(t);}});});
@@ -262,13 +268,14 @@
       +'<button class="coltog'+(kids?"":" off")+'" data-id="'+t.id+'" title="'+(col?"펼치기":"접기")+'" aria-label="'+(col?"펼치기":"접기")+'"><span class="ms">'+(col?"chevron_right":"expand_more")+'</span></button>'
       +'<div class="what"'+CE()+' data-field="what" data-id="'+t.id+'" title="'+escAttr(t.what)+'">'+esc(t.what)+'</div>'
       +(kids&&col?'<span class="cnt">'+kids+'</span>':'')
-      +(EDITABLE?'<button class="addhist" data-id="'+t.id+'" title="히스토리 추가" aria-label="히스토리 추가"><span class="ms">add</span></button>':'')
+      +(EDITABLE?'<button class="addhist" data-id="'+t.id+'" title="Goal 추가" aria-label="Goal 추가"><span class="ms">add</span></button>':'')
       +'</div>'
-      +progCell(t)+'<div class="sp"></div>'+dueCell(t);   // 담당 자리는 빈칸 — 기한 열을 히스토리와 맞추기 위함
+      +progCell(t)+'<div class="sp"></div>'+dueCell(t);   // 담당 자리는 빈칸 — 기한 열을 Goal 행과 맞추기 위함
   }
-  function historyCells(t){
+  // Goal(뎁스2) / 세부(뎁스3) — 이번 주 안에 끝낼 단위. 기한·진행률 없음(프로젝트에만), 상태칩은 행 끝.
+  function goalCells(t){
     return '<div class="pri sub" data-id="'+t.id+'"><span class="ms">subdirectory_arrow_right</span></div>'
-      +chipCell(t)+ed("what",t.id,t.what||"","note histwhat","한 일")+progCell(t)+ownerCell(t)+dueCell(t);
+      +ed("what",t.id,t.what||"","note goalwhat","Goal")+ownerCell(t)+chipCell(t);
   }
 
   function render(){
@@ -282,9 +289,9 @@
     var tb=document.getElementById("tbody");
     tb.innerHTML=order.map(function(o){
       var t=o.t,depth=o.depth,cells,gridCols,extra;
-      if(depth>0){                         // child → history entry (faint grey, indented)
-        cells=historyCells(t);gridCols=COLS_HISTORY;extra=" history child";
-      }else{                               // top-level → project header (no tint) even with no children yet
+      if(depth>0){                         // Goal(1) / 세부(2) — 뎁스가 깊을수록 작고 흐리게
+        cells=goalCells(t);gridCols=COLS_GOAL;extra=" goal"+(depth>1?" deep":"");
+      }else{                               // 최상위 → 프로젝트 헤더
         cells=projectHeaderCells(t);gridCols=COLS_PROJECT;extra=" project";
       }
       var done=depth>0&&/완료/.test(t.friStatus);
@@ -338,7 +345,7 @@
     }return;}
     var del=e.target.closest(".del");
     if(del){var t=getTask(del.dataset.id);if(t&&confirm("이 과업을 삭제할까요?\n\n"+t.what)){
-      state.tasks.forEach(function(x){if((x.parent||null)===t.id){x.parent=null;touch(x);}});
+      state.tasks.forEach(function(x){if((x.parent||null)===t.id){x.parent=(t.parent||null);touch(x);}});   // 하위는 조부모로(3뎁스에서 최상위 승격 방지)
       t._del=true;touch(t);renumberAll();saveLocal();render();}return;}
     var seg=e.target.closest(".seg");
     if(seg){var pg=seg.closest(".prog");
@@ -433,15 +440,15 @@
     if(srcId===tgtId)return;
     var src=getTask(srcId),tgt=getTask(tgtId);if(!src||!tgt)return;
     if(isDesc(tgtId,srcId))return;                 // 자기 하위로는 이동 불가
+    // 최대 3단계(MAXDEPTH=2). 옮기려는 항목이 자기 하위를 데리고 가므로 그 깊이까지 합산해 검사한다.
     if(mode==="nest"){
-      var groupId=(tgt.parent||null)!=null?tgt.parent:tgt.id;   // 깊이 1단계로 고정
-      if(groupId===srcId)return;
-      if(childrenOf(srcId).length>0){alert("하위 과업이 있는 항목은 그룹에 넣을 수 없습니다.\n먼저 하위 과업을 분리해 주세요.");return;}
-      src.parent=groupId;src.pri=9999;touch(src);
+      if(tgt.id===srcId)return;
+      if(depthOf(tgt.id)+1+subDepth(srcId)>MAXDEPTH){alert("최대 3단계까지만 묶을 수 있습니다.");return;}
+      src.parent=tgt.id;src.pri=9999;touch(src);
     }else{
       var newParent=tgt.parent||null;
       if(newParent===srcId)return;
-      if(newParent!=null&&childrenOf(srcId).length>0){alert("하위 과업이 있는 항목은 그룹 안으로 옮길 수 없습니다.");return;}
+      if(depthOf(tgt.id)+subDepth(srcId)>MAXDEPTH){alert("최대 3단계까지만 묶을 수 있습니다.");return;}
       src.parent=newParent;
       var sibs=childrenOf(newParent).filter(function(x){return x.id!==srcId;}).map(function(x){return x.id;});
       var ti=sibs.indexOf(tgtId);
@@ -485,7 +492,7 @@
         if(t&&confirm("이 항목을 삭제할까요?\n\n"+(t.what||""))){
           s.row.style.transition="transform .18s ease";s.row.style.transform="translateX(-100%)";
           setTimeout(function(){
-            state.tasks.forEach(function(x){if((x.parent||null)===t.id){x.parent=null;touch(x);}});
+            state.tasks.forEach(function(x){if((x.parent||null)===t.id){x.parent=(t.parent||null);touch(x);}});   // 하위는 조부모로(3뎁스에서 최상위 승격 방지)
             t._del=true;touch(t);renumberAll();saveLocal();render();
           },170);
           return;

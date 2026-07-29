@@ -50,7 +50,7 @@ h1{font-family:var(--disp);font-size:2.1rem;font-weight:700;letter-spacing:-.01e
 .saveind.on{opacity:1;}
 .saveind .ms{font-size:.95rem;color:var(--red);}
 
-/* tabs (nav) removed — single unified project/history view */
+/* tabs (nav) removed — 단일 뷰(프로젝트 > Goal > 세부) */
 
 .sheet{flex:1;display:flex;flex-direction:column;min-height:0;margin-top:1rem;}
 .row{display:grid;align-items:center;gap:1.4rem;}
@@ -75,10 +75,12 @@ body.dragging-active .dragh{cursor:grabbing;}
 .row.dropbefore{box-shadow:inset 0 3px 0 var(--red);}
 .row.dropafter{box-shadow:inset 0 -3px 0 var(--red);}
 .row.dropnest{box-shadow:inset 0 0 0 2px var(--red);background:rgba(215,25,33,.05);}
-/* History entries (children) get ONE faint neutral grey so a project's timeline reads as an
-   indented sub-block. Top-level PROJECT rows stay on the plain paper — no colour. */
-.row.history{background:#f5f5f5;}
-body.dark .row.history{background:#181818;}
+/* 뎁스 위계 — 프로젝트(흰 바탕) > Goal(옅은 회색) > 세부(한 단 더 진하게).
+   왼쪽 세로 레일이 뎁스를 표시해 가로 폭을 쓰지 않고도 계층이 읽힌다. */
+.row.goal{background:#f6f6f6;box-shadow:inset 3px 0 0 var(--line2);}
+.row.goal.deep{background:#efefef;box-shadow:inset 3px 0 0 var(--line2),inset 9px 0 0 var(--line);}
+body.dark .row.goal{background:#171717;box-shadow:inset 3px 0 0 #333;}
+body.dark .row.goal.deep{background:#1e1e1e;box-shadow:inset 3px 0 0 #333,inset 9px 0 0 #262626;}
 /* ---- Project header (top-level task with children) — same on Mon/Wed/Fri ---- */
 .row.project{align-items:center;}
 .row.project .pri{font-size:1.55rem;}
@@ -101,9 +103,15 @@ body.dark .tlink{color:#7ab0ff;}
 .coltog .ms{font-size:1.4rem;}
 .coltog.off{visibility:hidden;}   /* 하위가 없으면 자리만 유지해 제목 시작선을 맞춘다 */
 .phead .cnt{flex:none;font-family:var(--mono);font-size:.72rem;font-weight:700;color:var(--mut);background:var(--empty);padding:.12rem .4rem;}
-/* ---- History entry (child) — the project's timeline, same on Mon/Wed/Fri ---- */
-.row.history{align-items:center;}
-.history .histwhat{font-size:.98rem;}
+/* ---- Goal(뎁스2) / 세부(뎁스3) — 이번 주에 끝낼 단위 ---- */
+.row.goal{align-items:center;}
+.goal .goalwhat{font-size:1rem;padding-left:1.5rem;}          /* 들여쓰기는 내용만 — 담당·상태 열은 정렬 유지 */
+.goal.deep .goalwhat{font-size:.9rem;padding-left:3rem;color:var(--mut);}
+.goal.deep .pri.sub{padding-left:1.5rem;}
+.goal.deep .pri.sub .ms{font-size:1rem;}
+.goal.deep .ochip,.goal.deep .chip{transform:scale(.92);transform-origin:left center;}
+/* 빈 Goal 은 작성 기준을 안내 — "이번 주 안에 끝낼 일" */
+.goalwhat:empty:before{content:"이번 주 안에 끝낼 일";color:var(--faint);pointer-events:none;}
 .pri.sub{display:flex;align-items:center;justify-content:flex-start;color:var(--faint);}
 .pri.sub .ms{font-size:1.2rem;}
 .pri{font-family:var(--dot);font-size:1.5rem;font-weight:900;color:var(--red);line-height:1;}
@@ -238,17 +246,18 @@ body.dark .ochip:hover{filter:brightness(1.14);}
 
 /* ============================================================
    RESPONSIVE — desktop table >= 1280px. Below that every row
-   (project header / history entry) reflows into a stacked card.
+   (프로젝트 / Goal / 세부) 가 세로 카드로 재배치된다.
    Only two row types exist now, so the mobile rules stay simple.
    ============================================================ */
 @media (max-width:1279px){
   html{font-size:clamp(14px,3.9vw,16px);overflow-x:clip;}   /* clip: 세로 스크롤 안 깨고 가로만 차단 */
   body{height:auto;min-height:100dvh;overflow-x:hidden;overflow-y:auto;overscroll-behavior-x:none;padding:1.1rem 1rem 2.2rem;}
 
-  header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.4rem .6rem;}
-  h1{font-size:1.6rem;}
-  .part{font-size:1rem;padding-left:.6rem;}
-  .brand{order:1;flex:1 1 auto;min-width:0;flex-wrap:wrap;gap:.4rem .6rem;}   /* 브랜드가 남는 폭을 채워 셀렉·버튼을 우측으로 밀착 */
+  /* 헤더는 항상 1줄. 제목이 길어도 브랜드만 줄어들고(말줄임) 셀렉·버튼은 밀리지 않는다. */
+  header{display:flex;flex-wrap:nowrap;align-items:center;gap:.4rem .5rem;}
+  h1{font-size:1.6rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .part{font-size:1rem;padding-left:.5rem;flex:none;white-space:nowrap;}
+  .brand{order:1;flex:1 1 0;min-width:0;flex-wrap:nowrap;overflow:hidden;gap:.4rem .5rem;}
   .head-right{order:3;gap:.45rem;}   /* 셀렉(order2) 오른쪽에 다크모드·+ 이 오도록 */
   .toolbar{flex-wrap:wrap;gap:.4rem;justify-content:flex-end;}
   .selwrap{min-width:0;}
@@ -265,7 +274,7 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .tbody{display:block;overflow-x:clip;overflow-y:visible;scrollbar-gutter:auto;border-top:2px solid var(--ink);}
 
   /* Continuous list (like the desktop table): flush-left rows, no card boxes/indent, no leading
-     numbers. A project + its history read as one attached block — white header, grey history rows. */
+     프로젝트 + 그 아래 Goal 이 하나의 블록으로 읽히게 — 흰 헤더, 회색 Goal 행. */
   /* touch-action:pan-y — 세로 스크롤만 브라우저에 맡기고 가로 제스처는 JS 스와이프로.
      핀치/더블탭 확대도 이 영역에선 비활성 → 스와이프 중 화면이 확대·축소되지 않는다. */
   .row{position:relative;overflow:visible;touch-action:pan-y;column-gap:.55rem;row-gap:.5rem;align-items:center;
@@ -297,19 +306,18 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row.project .duec{grid-column:2;grid-row:2;}
   .row.project .prog{grid-column:3;grid-row:2;}   /* 전체 진행률은 우측 */
 
-  /* History row: flush-left. 한 일 on top; a compact icon meta (상태 · 담당 · 기한) below, packed left. */
-  .row.history{grid-template-columns:auto auto auto 1fr!important;margin-left:0;column-gap:.5rem;}
-  .row.history .pri{display:none;}
-  .row.history .histwhat{grid-column:1 / -1;grid-row:1;white-space:pre-wrap;}
-  .row.history .chip{grid-column:1;grid-row:2;}
-  .row.history .ochip{grid-column:2;grid-row:2;}
-  .row.history .duec{grid-column:3;grid-row:2;}
-  /* 진행률은 우측에 간소하게 — 미니 바 + %. 칸이 좁아 오터치가 나므로 칸 클릭은 끄고,
+  /* Goal 카드: [내용] 위 / [담당 · 상태] 아래. 들여쓰기 대신 왼쪽 레일로 뎁스를 표시해 가로 폭을 아낀다. */
+  .row.goal{grid-template-columns:minmax(0,1fr) auto!important;margin-left:0;column-gap:.5rem;padding-left:1.4rem;}
+  .row.goal.deep{padding-left:2.4rem;}
+  .row.goal .pri{display:none;}
+  .row.goal .goalwhat{grid-column:1 / -1;grid-row:1;white-space:pre-wrap;padding-left:0;}
+  .row.goal .ochip{grid-column:1;grid-row:2;justify-self:start;}
+  .row.goal .chip{grid-column:2;grid-row:2;justify-self:end;}   /* 상태칩은 행 끝 */
+  /* 진행률(프로젝트 전용)은 우측에 간소하게 — 미니 바 + %. 칸이 좁아 오터치가 나므로 칸 클릭은 끄고,
      영역 전체를 탭하면 10%씩 오르게 한다(app.js 의 .prog 핸들러). */
   .row .prog{gap:.35rem;justify-self:end;}
   .row .prog .bar{flex:none;width:3.2rem;height:.7rem;gap:1px;pointer-events:none;}
   .row .prog .pval{font-size:.78rem;min-width:2.6rem;}
-  .row.history .prog{grid-column:4;grid-row:2;}
 
   /* --- lighten the meta so a card reads as info, not a wall of buttons --- */
   .row .chip{height:1.9rem;min-height:1.9rem;min-width:4.7rem;padding:0 .5rem;font-size:.8rem;gap:.25rem;justify-content:center;}   /* uniform width — all statuses floored to 진행중 (widest) */
