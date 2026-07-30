@@ -18,7 +18,18 @@
   function isoWeekId(d){var t=mondayOf(d);t.setDate(t.getDate()+3);var w1=new Date(t.getFullYear(),0,4);
     var n=1+Math.round(((t-w1)/864e5-3+((w1.getDay()+6)%7))/7);return t.getFullYear()+"-W"+pad(n);}
   function normalize(st){st=st||{};if(!st.title)st.title="주간 리듬 미팅";if(!st.part)st.part="UX 기획파트";if(!st.tasks)st.tasks=[];
-    st.tasks.forEach(function(t,i){if(t.id==null)t.id="t"+i+"_"+Math.random().toString(36).slice(2,7);if(t.asis===undefined&&t.tobe===undefined){t.asis=t.why||"";t.tobe="";}});return st;}
+    st.tasks.forEach(function(t,i){if(t.id==null)t.id="t"+i+"_"+Math.random().toString(36).slice(2,7);if(t.asis===undefined&&t.tobe===undefined){t.asis=t.why||"";t.tobe="";}});
+    backfillFlags(st.tasks);return st;}
+  // 플래그 기본값 #진행 — 플래그가 없는 하위(Goal·세부)에 한 번 붙여준다.
+  // 플래그가 상태를 대신하게 됐으므로, 기존 데이터도 기본 상태를 갖게 맞추는 것.
+  function backfillFlags(tasks){(tasks||[]).forEach(function(t){
+    if(!t||!t.parent)return;                                   // 프로젝트는 대상 아님
+    var w=String(t.what||"");if(!w.trim())return;              // 빈 내용은 그대로(안내문 표시)
+    var first=w.split("\n")[0];
+    if(FLAGRE.test(first))return;                              // 이미 플래그 있으면 유지
+    var lead=/^(\s*(?:•\s*)?)/.exec(first)[1]||"";              // 불릿·공백은 보존
+    t.what=lead+"#진행 "+first.slice(lead.length)+w.slice(first.length);
+  });}
   function applyView(d){state=normalize(d);readOnly=(viewWeek!==curWeek);
     var dt=document.getElementById("docTitle");if(dt)dt.textContent=state.title;
     refreshWeekSel();render();}
@@ -146,8 +157,8 @@
   // its children are HISTORY entries. Two column templates, no per-day variants.
   // 뎁스1 프로젝트: 부문칩 | 이름 | 진행률 | (빈칸) | 기한
   // 뎁스2~3 Goal:   ↳ | 내용 | 담당 | 상태   ← 담당·상태가 프로젝트의 (빈칸)·기한 열과 정렬된다
-  var COLS_PROJECT="4.2rem minmax(0,1fr) 13rem 9rem 10rem";
-  var COLS_GOAL="4.2rem minmax(0,1fr) 9rem 10rem";
+  var COLS_PROJECT="4.2rem minmax(0,1fr) 13rem 3rem 10rem";   // 부문 | 이름 | 진행률 | 여백 | 기한
+  var COLS_GOAL="4.2rem minmax(0,1fr) 10rem";                 // ↳ | 내용 | 담당(= 기한 열과 정렬)
   var MAXDEPTH=2;   // 0=프로젝트, 1=Goal, 2=세부 (최대 3단계)
   var STATUS=[
     {k:"진행중",icon:"radio_button_unchecked",cls:""},
@@ -183,9 +194,11 @@
     return String(s).split("\n").map(function(line,i){
       var m=FLAGRE.exec(line);
       if(!m)return inlineHtml(line);
+      var rest=inlineHtml(line.slice(m[0].length));
+      if(m[2]==="성공")rest='<span class="lndone">'+rest+'</span>';   // 성공 = 그 줄 업무 완료 처리
       return esc(m[1])
         +'<span class="flag f'+FLAGS.indexOf(m[2])+'" contenteditable="false" data-line="'+i+'" title="클릭하면 다음 플래그">#'+m[2]+'</span>'
-        +inlineHtml(line.slice(m[0].length));
+        +rest;
     }).join("\n");
   }
   function escAttr(s){return esc(s).replace(/"/g,"&quot;");}
@@ -297,7 +310,7 @@
   // Goal(뎁스2) / 세부(뎁스3) — 이번 주 안에 끝낼 단위. 기한·진행률 없음(프로젝트에만), 상태칩은 행 끝.
   function goalCells(t){
     return '<div class="pri sub" data-id="'+t.id+'"><span class="ms">subdirectory_arrow_right</span></div>'
-      +ed("what",t.id,t.what||"","note goalwhat","Goal")+ownerCell(t)+'<div class="sp"></div>';   // 상태칩 제거 → 줄머리 플래그가 대신
+      +ed("what",t.id,t.what||"","note goalwhat","Goal")+ownerCell(t);   // 상태칩 제거 → 줄머리 플래그가 대신, 담당은 행 끝
   }
 
   function render(){
@@ -309,8 +322,10 @@
     renderDivBar();
     var order=buildOrder();
     var tb=document.getElementById("tbody");
+    var gdiv=0;   // 그룹(프로젝트+하위)의 부문 인덱스 — 왼쪽 레일 색을 부문 색과 맞추기 위해
     tb.innerHTML=order.map(function(o,i){
       var t=o.t,depth=o.depth,cells,gridCols,extra;
+      if(depth===0)gdiv=divIdx(t.division);
       if(depth>0){                         // Goal(1) / 세부(2) — 뎁스가 깊을수록 작고 흐리게
         cells=goalCells(t);gridCols=COLS_GOAL;extra=" goal"+(depth>1?" deep":"");
       }else{                               // 최상위 → 프로젝트 헤더
@@ -318,6 +333,7 @@
       }
       // 그룹(프로젝트+하위)의 마지막 행 → 아래에만 경계·여백을 줘서 한 덩어리로 보이게
       if(i===order.length-1||order[i+1].depth===0)extra+=" groupend";
+      extra+=" gd"+gdiv;   // 부문 색 레일
       var done=depth>0&&goalDone(t);
       return '<div class="row'+(done?" done":"")+extra+'" data-id="'+t.id+'" style="grid-template-columns:'+gridCols+'">'+
         (EDITABLE?'<span class="dragh" data-id="'+t.id+'" aria-label="순서 이동"><span class="ms">drag_indicator</span></span>':'')+
@@ -363,7 +379,7 @@
     var ah=e.target.closest(".addhist");
     if(ah){var pp=getTask(ah.dataset.id);if(pp){
       var mp=childrenOf(pp.id).reduce(function(m,x){return Math.max(m,x.pri||0);},0);
-      var nt={id:"t"+Date.now(),parent:pp.id,pri:mp+1,what:"",asis:"",tobe:"",owner:"—",due:"—",wedPct:null,wedNote:"—",friStatus:"진행중",friNote:"—",_v:Date.now()};
+      var nt={id:"t"+Date.now(),parent:pp.id,pri:mp+1,what:"#진행 ",asis:"",tobe:"",owner:"—",due:"—",wedPct:null,wedNote:"—",friStatus:"진행중",friNote:"—",_v:Date.now()};   // 새 Goal 기본 플래그
       state.tasks.push(nt);touch(pp);saveLocal();render();
       setTimeout(function(){var el=document.querySelector('.row[data-id="'+nt.id+'"] [data-field="what"]');if(el)el.focus();},30);
     }return;}

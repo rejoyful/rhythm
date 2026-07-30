@@ -87,11 +87,17 @@ body.dark .row.goal.deep{background:#1e1e1e;box-shadow:inset 3px 0 0 #333,inset 
 .row.project:first-child{border-top:none;}   /* .tbody 상단 라인과 중복 방지 */
 /* ── 그룹핑: 프로젝트 + 하위가 하나로 보이게 ──
    왼쪽 레일이 그룹 전체를 관통하고, 그룹 내부 구분선은 없애고, 그룹 끝에만 경계+여백을 준다. */
-.row.project{box-shadow:inset 3px 0 0 var(--ink);}
-.row.goal{box-shadow:inset 3px 0 0 var(--ink);border-bottom:none;}
-.row.goal.deep{box-shadow:inset 3px 0 0 var(--ink),inset 12px 0 0 var(--line2);}
-body.dark .row.goal{box-shadow:inset 3px 0 0 var(--ink);}
-body.dark .row.goal.deep{box-shadow:inset 3px 0 0 var(--ink),inset 12px 0 0 #333;}
+/* 레일 색은 그룹의 부문 색과 맞춘다(gd0~gd6 = divchip d0~d6). --rail 로 한 번만 정의하고
+   프로젝트·Goal·세부가 같은 값을 쓰므로 그룹 전체가 한 색 띠로 이어진다. */
+.row{--rail:var(--line2);}
+.row.gd1{--rail:#294c86;} .row.gd2{--rail:#5b3a8e;} .row.gd3{--rail:#2e6b39;}
+.row.gd4{--rail:#9a4a1e;} .row.gd5{--rail:#175c66;} .row.gd6{--rail:#3b4250;}
+body.dark .row.gd1{--rail:#9fc0ee;} body.dark .row.gd2{--rail:#c3a6ea;} body.dark .row.gd3{--rail:#a6d6a8;}
+body.dark .row.gd4{--rail:#e6a071;} body.dark .row.gd5{--rail:#86ccd6;} body.dark .row.gd6{--rail:#b9c0cd;}
+.row.project{box-shadow:inset 3px 0 0 var(--rail);}
+.row.goal{box-shadow:inset 3px 0 0 var(--rail);border-bottom:none;}
+.row.goal.deep{box-shadow:inset 3px 0 0 var(--rail),inset 12px 0 0 var(--line2);}
+body.dark .row.goal.deep{box-shadow:inset 3px 0 0 var(--rail),inset 12px 0 0 #333;}
 .row.groupend{border-bottom:1px solid var(--line);margin-bottom:.55rem;}
 .row.project .pri{font-size:1.55rem;}
 .phead{display:flex;align-items:center;gap:.9rem;min-width:0;}
@@ -103,6 +109,10 @@ body.dark .row.goal.deep{box-shadow:inset 3px 0 0 var(--ink),inset 12px 0 0 #333
 .addhist .ms{font-size:1.15rem;}
 /* "@이름" 멘션 — 표시 전용 강조(호출 아님) */
 .mention{font-weight:700;color:var(--red);}
+/* #성공 이 붙은 줄 = 그 줄 업무 완료 처리(취소선). 줄 단위 플래그라 줄 단위로 표시한다. */
+.lndone{color:var(--faint);text-decoration:line-through;}
+/* 행 전체 취소선은 끄고 줄 단위(.lndone)에 맡긴다 — 여러 줄 중 일부만 성공일 수 있으므로 */
+.row.done .goalwhat{color:inherit;text-decoration:none;}
 /* 줄머리 플래그 — 내용 칸 각 줄 앞의 #목표 토큰. 칩 글자가 저장 텍스트와 동일해 왕복이 안전하다.
    클릭하면 다음 플래그로 순환(app.js .flag 핸들러). */
 .flag{display:inline-block;font-family:var(--body);font-size:.72rem;font-weight:700;letter-spacing:0;
@@ -139,7 +149,7 @@ body.dark .tlink{color:#7ab0ff;}
 .goal.deep .goalwhat{font-size:.9rem;padding-left:3rem;color:var(--mut);}
 .goal.deep .pri.sub{padding-left:1.5rem;}
 .goal.deep .pri.sub .ms{font-size:1rem;}
-.goal.deep .ochip,.goal.deep .chip{transform:scale(.92);transform-origin:left center;}
+.goal.deep .ochip{transform:scale(.92);transform-origin:right center;}   /* 우측 끝 정렬 유지하며 축소 */
 /* 빈 Goal 은 작성 기준을 안내 — "이번 주 안에 끝낼 일" */
 .goalwhat:empty:before{content:"이번 주 안에 끝낼 일";color:var(--faint);pointer-events:none;}
 .pri.sub{display:flex;align-items:center;justify-content:flex-start;color:var(--faint);}
@@ -337,13 +347,13 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row.project .duec{grid-column:2;grid-row:2;}
   .row.project .prog{grid-column:3;grid-row:2;}   /* 전체 진행률은 우측 */
 
-  /* Goal 카드: [내용] 위 / [담당 · 상태] 아래. 들여쓰기 대신 왼쪽 레일로 뎁스를 표시해 가로 폭을 아낀다. */
-  .row.goal{grid-template-columns:minmax(0,1fr) auto!important;margin-left:0;column-gap:.5rem;padding-left:1.4rem;}
+  /* Goal 카드: [내용] 위 / [담당] 아래 우측. 들여쓰기 대신 왼쪽 레일로 뎁스를 표시해 가로 폭을 아낀다.
+     상태는 내용 안의 줄머리 플래그가 대신하므로 행 단위 칩은 없다. */
+  .row.goal{grid-template-columns:minmax(0,1fr)!important;margin-left:0;column-gap:.5rem;padding-left:1.4rem;}
   .row.goal.deep{padding-left:2.4rem;}
   .row.goal .pri{display:none;}
   .row.goal .goalwhat{grid-column:1 / -1;grid-row:1;white-space:pre-wrap;padding-left:0;}
-  .row.goal .ochip{grid-column:1;grid-row:2;justify-self:start;}
-  .row.goal .chip{grid-column:2;grid-row:2;justify-self:end;}   /* 상태칩은 행 끝 */
+  .row.goal .ochip{grid-column:1 / -1;grid-row:2;justify-self:end;}   /* 담당은 행 끝 */
   /* 진행률(프로젝트 전용)은 우측에 간소하게 — 미니 바 + %. 칸이 좁아 오터치가 나므로 칸 클릭은 끄고,
      영역 전체를 탭하면 10%씩 오르게 한다(app.js 의 .prog 핸들러). */
   .row .prog{gap:.35rem;justify-self:end;}
