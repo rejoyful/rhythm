@@ -242,10 +242,12 @@
   }
   // ----- 부문(division): 프로젝트를 출판/심리/교육/메디컬 로 분류. 담당처럼 클릭해 순환. -----
   var DIVISIONS=["출판","심리","교육","메디컬","AX","전사"];
-  function divList(){return [""].concat(DIVISIONS);}                    // "" = 미지정
   function divIdx(v){var i=DIVISIONS.indexOf(v||"");return i<0?0:i+1;}  // 0=미지정, 1..6
   function divCell(t){var v=t.division||"";
-    return '<button class="divchip d'+divIdx(v)+'" data-field="division" data-id="'+t.id+'" title="부문: '+(v||"미지정")+'">'+esc(v||"미지정")+'</button>';}
+    var opts=[""].concat(DIVISIONS).map(function(d){
+      return '<option value="'+escAttr(d)+'"'+(d===v?" selected":"")+'>'+esc(d||"미지정")+'</option>';}).join("");
+    return '<div class="divchip d'+divIdx(v)+'" title="부문: '+escAttr(v||"미지정")+'">'
+      +'<select class="dsel"'+(EDITABLE?"":" disabled")+' data-field="division" data-id="'+t.id+'" aria-label="부문 선택">'+opts+'</select></div>';}
   // 부문별 보기 필터도 "보는 사람"의 설정이라 공유 데이터가 아니라 localStorage. "" = 전체
   var DIV_LS="axp_divfilter_v1",viewDiv="";
   try{viewDiv=localStorage.getItem(DIV_LS)||"";}catch(e){viewDiv="";}
@@ -368,6 +370,7 @@
   tb.addEventListener("change",function(e){
     if(readOnly)return;
     var el=e.target;if(!el.dataset||!el.dataset.field)return;var t=getTask(el.dataset.id);if(!t)return;
+    if(el.dataset.field==="division"){t.division=el.value;touch(t);saveLocal();render();return;}
     if(el.dataset.field==="due"){t.due=el.value||"—";var dc=el.closest(".duec");if(dc){dc.classList.toggle("empty",!el.value);var dd=dc.querySelector(".ddisp");if(dd)dd.textContent=el.value?el.value.slice(5).replace("-","."):"미정";}touch(t);saveLocal();return;}
   });
   tb.addEventListener("click",function(e){
@@ -400,10 +403,6 @@
       var nx=pctOf(tp)>=100?0:pctOf(tp)+PSTEP;tp.wedPct=nx;
       if(tp.parent){if(nx===100)tp.friStatus="완료";else if(tp.friStatus==="완료")tp.friStatus="진행중";}
       touch(tp);saveLocal();render();}return;}
-    var dvc=e.target.closest(".divchip");
-    if(dvc){var td=getTask(dvc.dataset.id);if(!td)return;
-      var dl=divList();var di=dl.indexOf(td.division||"");if(di<0)di=0;
-      td.division=dl[(di+1)%dl.length];touch(td);saveLocal();render();return;}
     var oc=e.target.closest(".ochip");
     if(oc){var to=getTask(oc.dataset.id);if(!to)return;
       var list=ownerList();var oi=list.indexOf(to.owner);if(oi<0)oi=0;
