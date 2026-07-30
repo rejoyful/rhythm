@@ -115,24 +115,36 @@ body.dark .row.goal.deep{box-shadow:inset 3px 0 0 var(--rail),inset 12px 0 0 #33
 .row.done .goalwhat{color:inherit;text-decoration:none;}
 /* 줄머리 플래그 — 내용 칸 각 줄 앞의 #목표 토큰. 칩 글자가 저장 텍스트와 동일해 왕복이 안전하다.
    클릭하면 다음 플래그로 순환(app.js .flag 핸들러). */
-.flag{display:inline-block;font-family:var(--body);font-size:.72rem;font-weight:700;letter-spacing:0;
-  line-height:1.5;padding:.05rem .38rem;margin-right:.3rem;border:1px solid transparent;
+/* 칩을 누르면 드롭다운에서 고른다. 캐럿은 CSS 생성 콘텐츠라 innerText(=저장값)에 섞이지 않는다.
+   (아이콘 span 이나 <select> 를 본문에 넣으면 저장값이 오염되므로 반드시 ::after 로) */
+.flag{position:relative;display:inline-block;font-family:var(--body);font-size:.72rem;font-weight:700;letter-spacing:0;
+  line-height:1.5;padding:.05rem .95rem .05rem .38rem;margin-right:.3rem;border:1px solid transparent;
   cursor:pointer;user-select:none;white-space:nowrap;vertical-align:.05em;}
 .flag:hover{filter:brightness(.95);}
-.flag.f0{background:#e6e9f7;color:#33408a;border-color:#c3cbec;}   /* 목표 */
-.flag.f1{background:#dceaf7;color:#1f5b86;border-color:#b3d3ea;}   /* 진행 */
-.flag.f2{background:#dcefdd;color:#2e6b39;border-color:#b6ddb9;}   /* 성공 */
-.flag.f3{background:#fbdede;color:#9a2c2c;border-color:#f0bcbc;}   /* 실패 */
-.flag.f4{background:#faeccf;color:#7a5a12;border-color:#ecd7a1;}   /* 보류 */
-.flag.f5{background:#ececec;color:#5a5a5a;border-color:#d6d6d6;}   /* 대기 */
-.flag.f6{background:#fbe0ef;color:#8d2a6b;border-color:#f0bcd9;}   /* 이슈 */
-body.dark .flag.f0{background:#1a1f38;color:#a8b4ea;border-color:#2e3866;}
-body.dark .flag.f1{background:#12283a;color:#8fc2e6;border-color:#22465f;}
-body.dark .flag.f2{background:#16281a;color:#a6d6a8;border-color:#2f4a34;}
-body.dark .flag.f3{background:#331515;color:#eda3a3;border-color:#562a2a;}
-body.dark .flag.f4{background:#332811;color:#e6c479;border-color:#57451d;}
-body.dark .flag.f5{background:#242424;color:#aaa;border-color:#3a3a3a;}
-body.dark .flag.f6{background:#31142a;color:#e8a3ce;border-color:#552748;}
+.flag::after{content:"expand_more";font-family:'Material Symbols Outlined';font-feature-settings:'liga';
+  font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;position:absolute;right:.02rem;top:50%;
+  transform:translateY(-50%);font-size:.9rem;line-height:1;opacity:.7;pointer-events:none;}
+/* 플래그 드롭다운 — 본문(contenteditable) 밖 body 에 그린다 */
+.flagpop{position:fixed;z-index:60;display:flex;flex-direction:column;gap:.15rem;min-width:7.5rem;
+  background:var(--paper);border:1.5px solid var(--ink);box-shadow:0 6px 20px rgba(0,0,0,.16);padding:.28rem;}
+.flagopt{font-family:var(--body);font-size:.8rem;font-weight:700;text-align:left;padding:.3rem .5rem;
+  border:1px solid transparent;background:transparent;color:var(--ink);cursor:pointer;}
+.flagopt:hover{filter:brightness(.94);}
+.flagopt.none{color:var(--mut);font-weight:400;border-top:1px solid var(--line);margin-top:.15rem;padding-top:.4rem;}
+.flag.f0,.flagopt.f0{background:#e6e9f7;color:#33408a;border-color:#c3cbec;}   /* 목표 */
+.flag.f1,.flagopt.f1{background:#dceaf7;color:#1f5b86;border-color:#b3d3ea;}   /* 진행 */
+.flag.f2,.flagopt.f2{background:#dcefdd;color:#2e6b39;border-color:#b6ddb9;}   /* 성공 */
+.flag.f3,.flagopt.f3{background:#fbdede;color:#9a2c2c;border-color:#f0bcbc;}   /* 실패 */
+.flag.f4,.flagopt.f4{background:#faeccf;color:#7a5a12;border-color:#ecd7a1;}   /* 보류 */
+.flag.f5,.flagopt.f5{background:#ececec;color:#5a5a5a;border-color:#d6d6d6;}   /* 대기 */
+.flag.f6,.flagopt.f6{background:#fbe0ef;color:#8d2a6b;border-color:#f0bcd9;}   /* 이슈 */
+body.dark .flag.f0,body.dark .flagopt.f0{background:#1a1f38;color:#a8b4ea;border-color:#2e3866;}
+body.dark .flag.f1,body.dark .flagopt.f1{background:#12283a;color:#8fc2e6;border-color:#22465f;}
+body.dark .flag.f2,body.dark .flagopt.f2{background:#16281a;color:#a6d6a8;border-color:#2f4a34;}
+body.dark .flag.f3,body.dark .flagopt.f3{background:#331515;color:#eda3a3;border-color:#562a2a;}
+body.dark .flag.f4,body.dark .flagopt.f4{background:#332811;color:#e6c479;border-color:#57451d;}
+body.dark .flag.f5,body.dark .flagopt.f5{background:#242424;color:#aaa;border-color:#3a3a3a;}
+body.dark .flag.f6,body.dark .flagopt.f6{background:#31142a;color:#e8a3ce;border-color:#552748;}
 /* 업무내용 안의 링크 — 새 창으로 열림. 멘션(빨강)과 구분되게 파란 밑줄 */
 .tlink{color:#2563eb;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere;cursor:pointer;}
 .tlink:hover{color:#1d4ed8;}

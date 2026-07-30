@@ -177,6 +177,40 @@
   function flagOf(t){var m=FLAGRE.exec(String((t&&t.what)||"").split("\n")[0]);return m?m[2]:"";}
   function goalDone(t){return flagOf(t)==="성공";}   // 첫 줄 플래그가 성공 = 달성
 
+  // ----- 플래그 드롭다운 -----
+  var flagPop=null;
+  function closeFlagPop(){if(flagPop){flagPop.remove();flagPop=null;}}
+  // setFlag — 그 줄의 플래그만 바꾼다(v="" 이면 제거). 불릿·앞 공백은 보존.
+  function setFlag(id,line,v){
+    var t=getTask(id);if(!t)return;
+    var lines=String(t.what||"").split("\n");
+    var cur=lines[line]||"",m=FLAGRE.exec(cur);
+    var lead=m?m[1]:(/^(\s*(?:•\s*)?)/.exec(cur)[1]||"");
+    var rest=m?cur.slice(m[0].length):cur.slice(lead.length);
+    lines[line]=v?(lead+"#"+v+(rest&&!/^\s/.test(rest)?" ":"")+rest):(lead+rest.replace(/^\s+/,""));
+    t.what=lines.join("\n");touch(t);saveLocal();render();
+  }
+  function openFlagPop(chip,id,line){
+    closeFlagPop();if(readOnly||!id)return;
+    var el=document.createElement("div");el.className="flagpop";
+    el.innerHTML=FLAGS.map(function(f,i){
+      return '<button class="flagopt f'+i+'" data-v="'+f+'">#'+f+'</button>';}).join("")
+      +'<button class="flagopt none" data-v="">플래그 없음</button>';
+    document.body.appendChild(el);flagPop=el;
+    var r=chip.getBoundingClientRect(),pr=el.getBoundingClientRect();
+    var left=Math.min(r.left,window.innerWidth-pr.width-8);
+    var top=(r.bottom+pr.height+8>window.innerHeight)?(r.top-pr.height-4):(r.bottom+4);
+    el.style.left=Math.max(8,left)+"px";el.style.top=Math.max(8,top)+"px";
+    el.addEventListener("mousedown",function(e){e.preventDefault();});   // 캐럿 이동 방지
+    el.addEventListener("click",function(e){
+      var b=e.target.closest(".flagopt");if(!b)return;
+      setFlag(id,line,b.dataset.v);closeFlagPop();
+    });
+  }
+  document.addEventListener("mousedown",function(e){
+    if(flagPop&&!e.target.closest(".flagpop")&&!e.target.closest(".flag"))closeFlagPop();},true);
+  document.addEventListener("keydown",function(e){if(e.key==="Escape")closeFlagPop();});
+
   // 업무내용 렌더: (1) 줄머리 플래그 칩, (2) http(s) 링크 → 새 창, (3) "@이름" 강조. 모두 표시 전용.
   // URL·텍스트를 각각 이스케이프해 삽입하므로 XSS 안전(http(s)만 매칭돼 javascript: 등은 배제).
   function inlineHtml(s){
@@ -411,17 +445,14 @@
     if(chip){var tt=getTask(chip.dataset.id);if(!tt)return;
       var idx=STATUS.map(function(s){return s.k;}).indexOf(tt.friStatus);
       tt.friStatus=STATUS[(idx+1)%STATUS.length].k;touch(tt);saveLocal();render();return;}
-    // 줄머리 플래그 칩 클릭 → 그 줄만 다음 플래그로 순환(목표→진행→…→이슈→목표)
+    // 줄머리 플래그 칩 클릭 → 드롭다운에서 골라 바꾼다.
+    // contenteditable 안에 <select> 를 넣으면 옵션 텍스트가 innerText(=저장값)에 섞이므로
+    // 목록은 본문 밖(body)에 그리는 커스텀 드롭다운으로 만든다.
     var fl=e.target.closest(".flag");
     if(fl){
-      var row=fl.closest("[data-id]"),cell=fl.closest("[data-field]");
-      var tf=getTask(cell?cell.dataset.id:(row&&row.dataset.id));if(!tf)return;
-      var li=parseInt(fl.dataset.line,10)||0;
-      var lines=String(tf.what||"").split("\n");
-      var m=FLAGRE.exec(lines[li]||"");if(!m)return;
-      var nx=FLAGS[(FLAGS.indexOf(m[2])+1)%FLAGS.length];
-      lines[li]=m[1]+"#"+nx+(lines[li]||"").slice(m[0].length);
-      tf.what=lines.join("\n");touch(tf);saveLocal();render();return;
+      var cell=fl.closest("[data-field]"),row0=fl.closest("[data-id]");
+      openFlagPop(fl,cell?cell.dataset.id:(row0&&row0.dataset.id),parseInt(fl.dataset.line,10)||0);
+      return;
     }
   });
 
