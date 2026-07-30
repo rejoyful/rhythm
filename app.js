@@ -158,9 +158,17 @@
   ];
   function statusObj(k){for(var i=0;i<STATUS.length;i++)if(STATUS[i].k===k)return STATUS[i];return STATUS[0];}
   function esc(s){return String(s).replace(/[&<>]/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[m];});}
-  // 업무내용 렌더: (1) http(s) 링크 → 새 창 하이퍼링크, (2) "@이름" 강조. 둘 다 표시 전용.
+  // ----- 줄머리 플래그 -----
+  // 내용 칸의 "각 줄" 앞에 #목표 처럼 적으면 틴트 칩으로 보이고, 칩을 클릭하면 다음 플래그로 순환한다.
+  // 칩에 보이는 글자가 저장된 텍스트와 똑같아서(#목표) contenteditable 의 innerText 왕복이 깨지지 않는다.
+  var FLAGS=["목표","진행","성공","실패","보류","대기","이슈"];
+  var FLAGRE=/^(\s*(?:•\s*)?)#(목표|진행|성공|실패|보류|대기|이슈)(?=\s|$)/;
+  function flagOf(t){var m=FLAGRE.exec(String((t&&t.what)||"").split("\n")[0]);return m?m[2]:"";}
+  function goalDone(t){return flagOf(t)==="성공";}   // 첫 줄 플래그가 성공 = 달성
+
+  // 업무내용 렌더: (1) 줄머리 플래그 칩, (2) http(s) 링크 → 새 창, (3) "@이름" 강조. 모두 표시 전용.
   // URL·텍스트를 각각 이스케이프해 삽입하므로 XSS 안전(http(s)만 매칭돼 javascript: 등은 배제).
-  function mentionHtml(s){
+  function inlineHtml(s){
     s=String(s);
     function plain(t){return esc(t).replace(/@([A-Za-z0-9가-힣_]+)/g,'<span class="mention">@$1</span>');}
     var re=/https?:\/\/[^\s<]+[^\s<.,;:!?)\]}'"]/g,out="",last=0,m;
@@ -170,6 +178,15 @@
       last=m.index+m[0].length;
     }
     return out+plain(s.slice(last));
+  }
+  function mentionHtml(s){
+    return String(s).split("\n").map(function(line,i){
+      var m=FLAGRE.exec(line);
+      if(!m)return inlineHtml(line);
+      return esc(m[1])
+        +'<span class="flag f'+FLAGS.indexOf(m[2])+'" contenteditable="false" data-line="'+i+'" title="클릭하면 다음 플래그">#'+m[2]+'</span>'
+        +inlineHtml(line.slice(m[0].length));
+    }).join("\n");
   }
   function escAttr(s){return esc(s).replace(/"/g,"&quot;");}
   function CE(){return EDITABLE?" contenteditable":"";}
@@ -195,12 +212,15 @@
       +'<div class="pl"><span class="plk tobe">TO-BE</span><span class="ped"'+CE()+' data-field="tobe" data-id="'+t.id+'">'+esc(t.tobe||"")+'</span></div>'
       +'</div>';
   }
-  var ROSTER=["UX 파트","서비스 파트","DEV 파트","Edu 파트"];
+  var ROSTER=["박찬영 부장","조용선 차장","이해원 차장","김인성 과장","박성배 과장","이민석 과장",
+    "박동한 대리","이재현 대리","이제홍 대리","이새임 대리","정유나 대리","김현석 책임"];
+  var RANKS=["부장","차장","과장","대리","책임"];   // 12명에 12색은 구분이 안 되므로 직급별 5색 틴트(o1~o5)
   function ownerList(){return ["—"].concat(ROSTER);}
-  function ownerInitials(name){if(!name||name==="—")return "";return String(name).split(/\s+/)[0].slice(0,3);}   // UX / 서비스 / DEV
+  function ownerInitials(name){if(!name||name==="—")return "";return String(name).split(/\s+/)[0].slice(0,3);}   // 이름 3자
+  function ownerIdx(name){if(!name||name==="—")return 0;var i=RANKS.indexOf(String(name).split(/\s+/)[1]||"");return i<0?0:i+1;}
   function ownerCell(t){
     var label=(t.owner&&t.owner!=="—")?t.owner:"미정";
-    var idx=(!t.owner||t.owner==="—")?0:(ROSTER.indexOf(t.owner)+1);if(idx<0)idx=0;
+    var idx=ownerIdx(t.owner);
     var ini=ownerInitials(t.owner);
     // desktop shows the full name (.oname); mobile shows a compact initial-avatar (.oini)
     return '<button class="ochip o'+idx+'" data-field="owner" data-id="'+t.id+'" title="담당: '+escAttr(label)+'" aria-label="담당 '+escAttr(label)+'">'
@@ -251,7 +271,10 @@
   function depthOf(id){var t=getTask(id),d=0;while(t&&t.parent&&d<200){d++;t=getTask(t.parent);}return d;}   // 0=프로젝트
   function subDepth(id){var kids=childrenOf(id),m=0;kids.forEach(function(k){var v=1+subDepth(k.id);if(v>m)m=v;});return m;}  // 자기 아래로 몇 단인지
   // 이월 대상: 자신과 모든 조상이 미완료일 때만. (부모가 마감되면 자손도 함께 이번 주 기록에 남는다)
-  function carries(t){var cur=t,g=0;while(cur&&g++<200){if(cur._del||cur.friStatus==="완료")return false;if(!cur.parent)return true;cur=getTask(cur.parent);}return true;}
+  function carries(t){var cur=t,g=0;while(cur&&g++<200){
+    if(cur._del)return false;
+    if(cur.parent&&goalDone(cur))return false;   // 하위는 첫 줄 플래그 #성공 이면 달성 → 이번 주 기록에 보관
+    if(!cur.parent)return true;cur=getTask(cur.parent);}return true;}
   function renumberAll(){
     var pids=[null].concat(state.tasks.map(function(t){return t.id;}));
     pids.forEach(function(pid){childrenOf(pid).forEach(function(t,i){if(t.pri!==i+1){t.pri=i+1;touch(t);}});});
@@ -274,7 +297,7 @@
   // Goal(뎁스2) / 세부(뎁스3) — 이번 주 안에 끝낼 단위. 기한·진행률 없음(프로젝트에만), 상태칩은 행 끝.
   function goalCells(t){
     return '<div class="pri sub" data-id="'+t.id+'"><span class="ms">subdirectory_arrow_right</span></div>'
-      +ed("what",t.id,t.what||"","note goalwhat","Goal")+ownerCell(t)+chipCell(t);
+      +ed("what",t.id,t.what||"","note goalwhat","Goal")+ownerCell(t)+'<div class="sp"></div>';   // 상태칩 제거 → 줄머리 플래그가 대신
   }
 
   function render(){
@@ -286,14 +309,16 @@
     renderDivBar();
     var order=buildOrder();
     var tb=document.getElementById("tbody");
-    tb.innerHTML=order.map(function(o){
+    tb.innerHTML=order.map(function(o,i){
       var t=o.t,depth=o.depth,cells,gridCols,extra;
       if(depth>0){                         // Goal(1) / 세부(2) — 뎁스가 깊을수록 작고 흐리게
         cells=goalCells(t);gridCols=COLS_GOAL;extra=" goal"+(depth>1?" deep":"");
       }else{                               // 최상위 → 프로젝트 헤더
         cells=projectHeaderCells(t);gridCols=COLS_PROJECT;extra=" project";
       }
-      var done=depth>0&&/완료/.test(t.friStatus);
+      // 그룹(프로젝트+하위)의 마지막 행 → 아래에만 경계·여백을 줘서 한 덩어리로 보이게
+      if(i===order.length-1||order[i+1].depth===0)extra+=" groupend";
+      var done=depth>0&&goalDone(t);
       return '<div class="row'+(done?" done":"")+extra+'" data-id="'+t.id+'" style="grid-template-columns:'+gridCols+'">'+
         (EDITABLE?'<span class="dragh" data-id="'+t.id+'" aria-label="순서 이동"><span class="ms">drag_indicator</span></span>':'')+
         cells+
@@ -370,7 +395,19 @@
     var chip=e.target.closest(".chip");
     if(chip){var tt=getTask(chip.dataset.id);if(!tt)return;
       var idx=STATUS.map(function(s){return s.k;}).indexOf(tt.friStatus);
-      tt.friStatus=STATUS[(idx+1)%STATUS.length].k;touch(tt);saveLocal();render();}
+      tt.friStatus=STATUS[(idx+1)%STATUS.length].k;touch(tt);saveLocal();render();return;}
+    // 줄머리 플래그 칩 클릭 → 그 줄만 다음 플래그로 순환(목표→진행→…→이슈→목표)
+    var fl=e.target.closest(".flag");
+    if(fl){
+      var row=fl.closest("[data-id]"),cell=fl.closest("[data-field]");
+      var tf=getTask(cell?cell.dataset.id:(row&&row.dataset.id));if(!tf)return;
+      var li=parseInt(fl.dataset.line,10)||0;
+      var lines=String(tf.what||"").split("\n");
+      var m=FLAGRE.exec(lines[li]||"");if(!m)return;
+      var nx=FLAGS[(FLAGS.indexOf(m[2])+1)%FLAGS.length];
+      lines[li]=m[1]+"#"+nx+(lines[li]||"").slice(m[0].length);
+      tf.what=lines.join("\n");touch(tf);saveLocal();render();return;
+    }
   });
 
   // ----- multi-line bullet editing (keeps newlines; Enter starts/continues a bullet list) -----

@@ -85,6 +85,14 @@ body.dark .row.goal.deep{background:#1e1e1e;box-shadow:inset 3px 0 0 #333,inset 
 .row.project{align-items:center;border-top:2px solid var(--ink);border-bottom:none;
   padding-top:1.15rem;padding-bottom:.9rem;}
 .row.project:first-child{border-top:none;}   /* .tbody 상단 라인과 중복 방지 */
+/* ── 그룹핑: 프로젝트 + 하위가 하나로 보이게 ──
+   왼쪽 레일이 그룹 전체를 관통하고, 그룹 내부 구분선은 없애고, 그룹 끝에만 경계+여백을 준다. */
+.row.project{box-shadow:inset 3px 0 0 var(--ink);}
+.row.goal{box-shadow:inset 3px 0 0 var(--ink);border-bottom:none;}
+.row.goal.deep{box-shadow:inset 3px 0 0 var(--ink),inset 12px 0 0 var(--line2);}
+body.dark .row.goal{box-shadow:inset 3px 0 0 var(--ink);}
+body.dark .row.goal.deep{box-shadow:inset 3px 0 0 var(--ink),inset 12px 0 0 #333;}
+.row.groupend{border-bottom:1px solid var(--line);margin-bottom:.55rem;}
 .row.project .pri{font-size:1.55rem;}
 .phead{display:flex;align-items:center;gap:.9rem;min-width:0;}
 .phead .what{font-family:var(--disp);font-size:1.5rem;font-weight:700;letter-spacing:-.02em;
@@ -95,6 +103,26 @@ body.dark .row.goal.deep{background:#1e1e1e;box-shadow:inset 3px 0 0 #333,inset 
 .addhist .ms{font-size:1.15rem;}
 /* "@이름" 멘션 — 표시 전용 강조(호출 아님) */
 .mention{font-weight:700;color:var(--red);}
+/* 줄머리 플래그 — 내용 칸 각 줄 앞의 #목표 토큰. 칩 글자가 저장 텍스트와 동일해 왕복이 안전하다.
+   클릭하면 다음 플래그로 순환(app.js .flag 핸들러). */
+.flag{display:inline-block;font-family:var(--body);font-size:.72rem;font-weight:700;letter-spacing:0;
+  line-height:1.5;padding:.05rem .38rem;margin-right:.3rem;border:1px solid transparent;
+  cursor:pointer;user-select:none;white-space:nowrap;vertical-align:.05em;}
+.flag:hover{filter:brightness(.95);}
+.flag.f0{background:#e6e9f7;color:#33408a;border-color:#c3cbec;}   /* 목표 */
+.flag.f1{background:#dceaf7;color:#1f5b86;border-color:#b3d3ea;}   /* 진행 */
+.flag.f2{background:#dcefdd;color:#2e6b39;border-color:#b6ddb9;}   /* 성공 */
+.flag.f3{background:#fbdede;color:#9a2c2c;border-color:#f0bcbc;}   /* 실패 */
+.flag.f4{background:#faeccf;color:#7a5a12;border-color:#ecd7a1;}   /* 보류 */
+.flag.f5{background:#ececec;color:#5a5a5a;border-color:#d6d6d6;}   /* 대기 */
+.flag.f6{background:#fbe0ef;color:#8d2a6b;border-color:#f0bcd9;}   /* 이슈 */
+body.dark .flag.f0{background:#1a1f38;color:#a8b4ea;border-color:#2e3866;}
+body.dark .flag.f1{background:#12283a;color:#8fc2e6;border-color:#22465f;}
+body.dark .flag.f2{background:#16281a;color:#a6d6a8;border-color:#2f4a34;}
+body.dark .flag.f3{background:#331515;color:#eda3a3;border-color:#562a2a;}
+body.dark .flag.f4{background:#332811;color:#e6c479;border-color:#57451d;}
+body.dark .flag.f5{background:#242424;color:#aaa;border-color:#3a3a3a;}
+body.dark .flag.f6{background:#31142a;color:#e8a3ce;border-color:#552748;}
 /* 업무내용 안의 링크 — 새 창으로 열림. 멘션(빨강)과 구분되게 파란 밑줄 */
 .tlink{color:#2563eb;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere;cursor:pointer;}
 .tlink:hover{color:#1d4ed8;}
@@ -187,11 +215,13 @@ body.dark .fdate::-webkit-calendar-picker-indicator{filter:invert(1) brightness(
 .ochip.o2{background:#e1f0d6;color:#345c1d;border-color:#bcdca6;}
 .ochip.o3{background:#f6e8cf;color:#6e4a12;border-color:#e6cf9e;}
 .ochip.o4{background:#f8dfe7;color:#7c2846;border-color:#eebccc;}
+.ochip.o5{background:#dfeef0;color:#1d5b63;border-color:#b4d9de;}   /* 책임 */
 body.dark .ochip.o0{background:var(--paper);color:var(--mut);border-color:var(--line2);}
 body.dark .ochip.o1{background:#192c45;color:#9ec3ee;border-color:#2c4a6e;}
 body.dark .ochip.o2{background:#1d3317;color:#a8d68a;border-color:#34542a;}
 body.dark .ochip.o3{background:#352810;color:#e7b660;border-color:#57401b;}
 body.dark .ochip.o4{background:#371f29;color:#ea9fb6;border-color:#583341;}
+body.dark .ochip.o5{background:#132b2e;color:#93cdd4;border-color:#255055;}
 /* 부문(division) 칩 — 프로젝트 앞(번호 자리). 담당 칩처럼 클릭해 순환. 폭 통일. */
 .divchip{justify-self:start;align-self:center;display:inline-flex;align-items:center;justify-content:center;
   font-family:var(--body);font-size:.82rem;font-weight:700;letter-spacing:-.01em;white-space:nowrap;
