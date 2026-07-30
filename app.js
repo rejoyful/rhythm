@@ -294,10 +294,13 @@
     var label=(t.owner&&t.owner!=="—")?t.owner:"미정";
     var idx=ownerIdx(t.owner);
     var ini=ownerInitials(t.owner);
-    // desktop shows the full name (.oname); mobile shows a compact initial-avatar (.oini)
-    return '<button class="ochip o'+idx+'" data-field="owner" data-id="'+t.id+'" title="담당: '+escAttr(label)+'" aria-label="담당 '+escAttr(label)+'">'
-      +'<span class="oini">'+(ini?esc(ini):'<span class="ms">person</span>')+'</span>'
-      +'<span class="oname"><span class="ms">person</span>'+esc(label)+'</span></button>';
+    // 담당 = 셀렉트박스. 데스크톱은 select 가 풀네임을 보여주고,
+    // 모바일은 폭이 없으니 래퍼가 data-ini 를 ::before 로 찍고 select 가 투명하게 덮는다.
+    var opts=ownerList().map(function(o){
+      return '<option value="'+escAttr(o)+'"'+(o===(t.owner||"—")?" selected":"")+'>'+esc(o==="—"?"미정":o)+'</option>';}).join("");
+    return '<div class="ochip o'+idx+'" data-ini="'+escAttr(ini||"미정")+'" title="담당: '+escAttr(label)+'">'
+      +'<span class="ms">person</span>'
+      +'<select class="osel"'+(EDITABLE?"":" disabled")+' data-field="owner" data-id="'+t.id+'" aria-label="담당 선택">'+opts+'</select></div>';
   }
   // ----- 부문(division): 프로젝트를 출판/심리/교육/메디컬 로 분류. 담당처럼 클릭해 순환. -----
   var DIVISIONS=["출판","심리","교육","메디컬","AX","전사"];
@@ -432,6 +435,7 @@
     if(readOnly)return;
     var el=e.target;if(!el.dataset||!el.dataset.field)return;var t=getTask(el.dataset.id);if(!t)return;
     if(el.dataset.field==="division"){t.division=el.value;touch(t);saveLocal();render();return;}
+    if(el.dataset.field==="owner"){t.owner=el.value||"—";touch(t);saveLocal();render();return;}
     if(el.dataset.field==="due"){t.due=el.value||"—";var dc=el.closest(".duec");if(dc){dc.classList.toggle("empty",!el.value);var dd=dc.querySelector(".ddisp");if(dd)dd.textContent=el.value?el.value.slice(5).replace("-","."):"미정";}touch(t);saveLocal();return;}
   });
   tb.addEventListener("click",function(e){
@@ -464,10 +468,6 @@
       var nx=pctOf(tp)>=100?0:pctOf(tp)+PSTEP;tp.wedPct=nx;
       if(tp.parent){if(nx===100)tp.friStatus="완료";else if(tp.friStatus==="완료")tp.friStatus="진행중";}
       touch(tp);saveLocal();render();}return;}
-    var oc=e.target.closest(".ochip");
-    if(oc){var to=getTask(oc.dataset.id);if(!to)return;
-      var list=ownerList();var oi=list.indexOf(to.owner);if(oi<0)oi=0;
-      to.owner=list[(oi+1)%list.length];touch(to);saveLocal();render();return;}
     var chip=e.target.closest(".chip");
     if(chip){var tt=getTask(chip.dataset.id);if(!tt)return;
       var idx=STATUS.map(function(s){return s.k;}).indexOf(tt.friStatus);

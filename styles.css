@@ -224,13 +224,19 @@ body.dark .fdate::-webkit-calendar-picker-indicator{filter:invert(1) brightness(
 .chip,.ochip{display:inline-flex;align-items:center;gap:.45rem;font-family:var(--body);font-size:.92rem;font-weight:700;
   letter-spacing:.02em;white-space:nowrap;border:1.5px solid var(--ink);height:2.5rem;padding:0 .8rem;background:var(--paper);cursor:pointer;
   color:var(--ink);user-select:none;transition:all .12s;box-sizing:border-box;}
+.ochip{position:relative;padding:0 1.5rem 0 .8rem;}   /* 오른쪽은 캐럿 자리 */
 .chip .ms,.ochip .ms{font-size:1.1rem;}
 /* 모든 상태칩이 같은 너비(가장 긴 "진행중" 기준) — 그래야 한 일·담당·기한 열이 행마다 어긋나지 않는다 */
 .chip{min-width:6rem;justify-content:center;}
 .chip:hover{background:#f4f4f4;}
 .ochip:hover{filter:brightness(.95);}
-.ochip .oname{display:inline-flex;align-items:center;gap:.45rem;}   /* full name — desktop table */
-.ochip .oini{display:none;}                                         /* initial avatar — mobile only */
+/* 담당 = 셀렉트박스. 색 틴트는 감싸는 .ochip(o0~o5)이 담당하고, 안의 select 는 색을 물려받는다. */
+.ochip .osel{appearance:none;-webkit-appearance:none;border:none;background:transparent;
+  font:inherit;color:inherit;letter-spacing:inherit;padding:0;outline:none;cursor:pointer;}
+.ochip .osel option{color:var(--ink);background:var(--paper);}   /* 드롭다운 목록은 기본 대비로 */
+.ochip::after{content:"expand_more";font-family:'Material Symbols Outlined';font-feature-settings:'liga';
+  font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;position:absolute;right:.2rem;
+  font-size:1rem;line-height:1;color:currentColor;opacity:.75;pointer-events:none;}
 .ddisp{display:none;}                                               /* short date label — mobile only */
 .ochip.o0{background:var(--paper);color:var(--mut);border-color:var(--line2);}
 .ochip.o1{background:#dde8f7;color:#1f4576;border-color:#a9c4e6;}
@@ -384,10 +390,13 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   .row .chip{height:1.9rem;min-height:1.9rem;min-width:4.7rem;padding:0 .5rem;font-size:.8rem;gap:.25rem;justify-content:center;}   /* uniform width — all statuses floored to 진행중 (widest) */
   .row .chip .ms{font-size:1rem;}
   /* 담당 → compact colored tile with initials; the full name stays in the desktop table */
-  .row .ochip{height:1.9rem;min-height:1.9rem;min-width:1.9rem;width:auto;padding:0 .4rem;justify-content:center;font-size:.8rem;}
-  .row .ochip .oname{display:none;}
-  .row .ochip .oini{display:inline-flex;align-items:center;justify-content:center;}
-  .row .ochip .oini .ms{font-size:1.05rem;}
+  /* 모바일 담당칩 — 풀네임을 놓을 폭이 없다. 보이는 글자는 래퍼가 이니셜(data-ini)로 찍고,
+     native select 는 칩 전체를 투명하게 덮어 탭 영역만 담당한다(피커는 OS 가 띄운다). */
+  .row .ochip{height:1.9rem;min-height:1.9rem;min-width:1.9rem;width:auto;padding:0 1.05rem 0 .4rem;justify-content:center;font-size:.8rem;}
+  .row .ochip::before{content:attr(data-ini);}
+  .row .ochip>.ms{display:none;}   /* person 아이콘은 이니셜과 중복이라 생략(캐럿은 남긴다 — 선택 가능 표시) */
+  .row .ochip::after{right:.1rem;font-size:.95rem;}
+  .row .ochip .osel{position:absolute;inset:0;width:100%;height:100%;opacity:0;}
   /* 기한 → borderless: calendar icon + short date; the native input is a transparent tap layer on top */
   .row .duec{position:relative;display:inline-flex;align-items:center;gap:.2rem;width:auto;min-width:0;height:1.9rem;}
   .row .duec::before{content:"calendar_month";font-family:'Material Symbols Outlined';font-feature-settings:'liga';
