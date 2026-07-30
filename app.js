@@ -285,8 +285,8 @@
       +'</div>';
   }
   var ROSTER=["박찬영 부장","조용선 차장","이해원 차장","김인성 과장","박성배 과장","이민석 과장",
-    "박동한 대리","이재현 대리","이제홍 대리","이새임 대리","정유나 대리","김현석 책임"];
-  var RANKS=["부장","차장","과장","대리","책임"];   // 12명에 12색은 구분이 안 되므로 직급별 5색 틴트(o1~o5)
+    "박동한 대리","이재현 대리","이제홍 대리","이새임 대리","정유나 대리","김현석 책임","양희주 책임"];
+  var RANKS=["부장","차장","과장","대리","책임"];   // 인원수만큼 색을 쓰면 구분이 안 되므로 직급별 5색 틴트(o1~o5)
   function ownerList(){return ["—"].concat(ROSTER);}
   function ownerInitials(name){if(!name||name==="—")return "";return String(name).split(/\s+/)[0].slice(0,3);}   // 이름 3자
   function ownerIdx(name){if(!name||name==="—")return 0;var i=RANKS.indexOf(String(name).split(/\s+/)[1]||"");return i<0?0:i+1;}
