@@ -24,7 +24,9 @@ Supabase 실시간 동기화로 여러 사람이 동시에 편집해도 서로�
 ## 파일 구조
 - `index.html` — 마크업(헤더 · 부문 필터 · 목록 · 추가 모달)
 - `styles.css` — 스타일(모노 "Nothing" 디자인, 라이트/다크, 반응형)
-- `app.js` — 로직 전부(상태 · Supabase 주차 DB · 실시간 동기화 · 렌더 · 이벤트 · 드래그 · 스와이프 · 모달)
+- `app.js` — 로직 전부(상태 · Supabase 주차 DB · 실시간 동기화 · 렌더 · 이벤트 · 드래그 · 스와이프 · 모달 · 두레이 알림 큐)
+- `supabase/schema/rhythm_notify_log.sql` — 두레이 알림 중복 방지 표(한 번만 실행)
+- `supabase/functions/dooray-notify/` — 두레이로 실제 발송하는 Edge Function(토큰 보관처)
 - `.claude/settings.json` — Claude Code 종료 시 자동 git 커밋·푸시 훅
 - `.gitignore`
 
@@ -71,6 +73,45 @@ claude
 git add -A && git commit -m "메모" && git push
 ```
 
+## 두레이 알림
+
+업무내용에 `@이름` 을 적고 **그 칸에서 포커스가 빠지면**, 그 줄이 팀 두레이 대화방에 자동으로 전달된다.
+보내는 주체는 팀 **업무 계정**이라 메시지에 그 계정 이름으로 뜬다.
+
+- **한 줄당 딱 한 번만** 간다. 나중에 오타를 고치거나 문장을 다듬어도 다시 가지 않는다.
+- 지난 주차를 **열람 중일 때는 보내지 않는다**(보기 전용).
+- 두레이 API 는 마크다운도 멘션도 해석하지 않는다(검증 완료). `@이름` 은 **평문**으로 들어가며
+  파란 멘션으로 걸리지 않는다 — 방 인원 전원이 어차피 방 알림을 받으므로 실사용엔 문제없다.
+- 끄고 싶으면 `app.js` 의 `NOTIFY_FN` 을 `""` 로 바꾸면 된다.
+
+### 최초 설정 (한 번만)
+
+1) **표 만들기** — Supabase 대시보드 → SQL Editor 에 `supabase/schema/rhythm_notify_log.sql` 붙여넣고 실행.
+
+2) **비밀값 등록** — 토큰은 코드·저장소에 절대 넣지 않는다. Supabase 에만 둔다.
+```
+supabase secrets set DOORAY_TOKEN=<업무계정 API 토큰>
+supabase secrets set DOORAY_CHANNEL_ID=<대화방 ID>
+```
+
+3) **함수 배포**
+```
+supabase functions deploy dooray-notify
+```
+
+> `supabase` 명령이 없으면 `brew install supabase/tap/supabase` 후 `supabase login`,
+> `supabase link --project-ref <프로젝트 ref>` 를 먼저 한다.
+> 터미널이 부담스러우면 Supabase 대시보드의 **Edge Functions** 화면에서 코드를 붙여넣어 배포하고,
+> **Settings → Edge Functions → Secrets** 에서 위 두 값을 넣어도 똑같다.
+
+### 대화방 ID 를 다시 찾아야 할 때
+```
+curl -s -H "Authorization: dooray-api <업무계정 토큰>" https://api.dooray.com/messenger/v1/channels | jq '.result[] | {id, title}'
+```
+
 ## 보안 주의
 - Supabase **anon(public) 키는 공개돼도 되는 키**라 커밋 OK(행 보안 RLS로 보호).
 - **`service_role` 같은 비밀키는 절대 코드·저장소에 넣지 말 것.** 정적 페이지에선 안전하게 다룰 수 없고, 서버/서버리스에서만 써야 한다.
+- **두레이 업무계정 토큰도 같은 등급의 비밀키다.** 유출되면 그 계정 명의로 아무 메시지나 보낼 수 있다.
+  `app.js` 에 넣지 말고 Supabase secrets 에만 두며, 브라우저는 `dooray-notify` 함수를 부를 뿐 토큰을 모른다.
+  함수는 문구를 클라이언트에서 받지 않고 **DB 에서 직접 읽으므로**, 함수 주소를 알아내도 임의 문구를 방에 밀어 넣을 수 없다.

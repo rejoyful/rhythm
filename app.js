@@ -10,6 +10,9 @@
   var SB_URL="https://nbuxqkxbvygvzlfoezro.supabase.co";   // 예: https://xxxx.supabase.co
   var SB_KEY="sb_publishable_yx7HPeG_bJeXoYTz6RcqCA_IdhEKxZE";   // anon public key
   // ============================================================
+  // 두레이 알림 — @멘션이 들어간 줄을 업무 계정 명의로 팀 대화방에 보낸다.
+  // 토큰·대화방 ID 는 여기 없다(정적 페이지라 공개되므로). Supabase Edge Function 이 들고 있다.
+  var NOTIFY_FN="dooray-notify";   // "" 로 두면 알림이 완전히 꺼진다.
   var CLIENT=Math.random().toString(36).slice(2);
   var sb=null,saveT=null;
   var curWeek=null,viewWeek=null,readOnly=false,weeksList=[],weekLabels={},EDITABLE=true;
@@ -35,7 +38,29 @@
     refreshWeekSel();render();}
   function saveRemote(){if(!sb||readOnly||!viewWeek)return;clearTimeout(saveT);saveT=setTimeout(function(){
     if(!state.label)state.label=weekLabel(new Date());
-    sb.from("rhythm").upsert({id:viewWeek,data:Object.assign({},state,{_by:CLIENT}),updated_at:new Date().toISOString()}).then(function(){},function(){});},400);}
+    sb.from("rhythm").upsert({id:viewWeek,data:Object.assign({},state,{_by:CLIENT}),updated_at:new Date().toISOString()}).then(flushNotify,function(){});},400);}
+
+  // ----- 두레이 알림 -----
+  // 좌표(주차·항목·줄번호)만 보내고 문구는 서버가 DB 에서 읽는다. 중복 차단도 서버 몫이라
+  // 새로고침하거나 두 사람이 같은 줄을 건드려도 알림은 한 번만 간다.
+  var MENTIONRE=/@[A-Za-z0-9가-힣_]+/;
+  var notifyQ={};
+  function queueNotify(t){
+    if(!NOTIFY_FN||!sb||readOnly||!viewWeek||viewWeek!==curWeek||!t)return;
+    String(t.what||"").split("\n").forEach(function(line,i){
+      if(MENTIONRE.test(line))notifyQ[t.id+"|"+i]=1;
+    });
+  }
+  // 저장이 실제로 끝난 뒤에 부른다 — 서버가 읽을 때 그 문구가 DB 에 있어야 하므로.
+  function flushNotify(){
+    var keys=Object.keys(notifyQ);if(!keys.length)return;
+    notifyQ={};
+    keys.forEach(function(k){
+      var p=k.split("|");
+      sb.functions.invoke(NOTIFY_FN,{body:{weekId:viewWeek,taskId:p[0],lineIndex:+p[1]}})
+        .then(function(){},function(){});   // 알림 실패가 편집을 방해하지 않게 조용히 넘긴다
+    });
+  }
   function touch(t){if(t)t._v=Date.now();}
   var pendingRender=false;
   function isEditing(){var a=document.activeElement;if(!a)return false;
@@ -400,6 +425,8 @@
     if(f==="pri"||f==="wedPct"){render();return;}
     // 타이핑 중에는 평문으로 두고, 포커스가 빠질 때 @멘션 강조를 다시 입힌다(캐럿 안 튐)
     if(!readOnly&&el&&el.classList&&el.classList.contains("note"))el.innerHTML=mentionHtml(el.innerText);
+    // 작성이 끝난 시점 = 두레이로 내보낼 시점. 저장이 끝나면 flushNotify 가 실제로 보낸다.
+    if(!readOnly&&f==="what")queueNotify(getTask(el.dataset.id));
   });
   tb.addEventListener("change",function(e){
     if(readOnly)return;
