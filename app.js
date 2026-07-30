@@ -20,7 +20,7 @@
   function normalize(st){st=st||{};if(!st.title)st.title="주간 리듬 미팅";if(!st.part)st.part="UX 기획파트";if(!st.tasks)st.tasks=[];
     st.tasks.forEach(function(t,i){if(t.id==null)t.id="t"+i+"_"+Math.random().toString(36).slice(2,7);if(t.asis===undefined&&t.tobe===undefined){t.asis=t.why||"";t.tobe="";}});return st;}
   function applyView(d){state=normalize(d);readOnly=(viewWeek!==curWeek);
-    var dt=document.getElementById("docTitle"),dp=document.getElementById("docPart");if(dt)dt.textContent=state.title;if(dp)dp.textContent=state.part;
+    var dt=document.getElementById("docTitle");if(dt)dt.textContent=state.title;
     refreshWeekSel();render();}
   function saveRemote(){if(!sb||readOnly||!viewWeek)return;clearTimeout(saveT);saveT=setTimeout(function(){
     if(!state.label)state.label=weekLabel(new Date());
@@ -28,7 +28,7 @@
   function touch(t){if(t)t._v=Date.now();}
   var pendingRender=false;
   function isEditing(){var a=document.activeElement;if(!a)return false;
-    if(a.id==="docTitle"||a.id==="docPart")return true;
+    if(a.id==="docTitle")return true;
     return (a.isContentEditable||a.tagName==="INPUT"||a.tagName==="TEXTAREA")&&!!(a.closest&&a.closest("#tbody"));}
   function scheduleRender(){if(isEditing())pendingRender=true;else render();}
   // Per-task merge: keep the newer version of each task by _v (deletes travel as _del tombstones),
@@ -53,9 +53,8 @@
   }
   function applyRemote(d){if(!d||d._by===CLIENT)return;delete d._by;
     var dirty=mergeInto(d);
-    var dt=document.getElementById("docTitle"),dp=document.getElementById("docPart");
+    var dt=document.getElementById("docTitle");
     if(dt&&document.activeElement!==dt)dt.textContent=state.title;
-    if(dp&&document.activeElement!==dp)dp.textContent=state.part;
     refreshWeekSel();scheduleRender();
     if(dirty)saveRemote();}
   function refreshWeekSel(){var sel=document.getElementById("weekSel");if(!sel)return;
@@ -281,7 +280,7 @@
   function render(){
     EDITABLE=!readOnly;
     document.getElementById("today").textContent=fmtToday(new Date())+(readOnly?"  ·  보기 전용":"");   // 중앙 주차 라벨 제거 → 보기전용은 우측 날짜에 표기
-    var dtt=document.getElementById("docTitle"),dpp=document.getElementById("docPart");if(dtt)dtt.contentEditable=EDITABLE;if(dpp)dpp.contentEditable=EDITABLE;
+    var dtt=document.getElementById("docTitle");if(dtt)dtt.contentEditable=EDITABLE;
     var ab=document.getElementById("addBtn");if(ab)ab.style.display=EDITABLE?"":"none";
 
     renderDivBar();
@@ -530,12 +529,11 @@
 
 
 
-  // ----- editable title / part -----
-  var docTitle=document.getElementById("docTitle"),docPart=document.getElementById("docPart");
-  docTitle.textContent=state.title;docPart.textContent=state.part;
+  // ----- editable title -----
+  var docTitle=document.getElementById("docTitle");
+  docTitle.textContent=state.title;
   docTitle.addEventListener("input",function(){if(readOnly)return;state.title=docTitle.textContent.trim();state._mv=Date.now();saveLocal();});
-  docPart.addEventListener("input",function(){if(readOnly)return;state.part=docPart.textContent.trim();state._mv=Date.now();saveLocal();});
-  [docTitle,docPart].forEach(function(el){el.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();el.blur();}});});
+  docTitle.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();docTitle.blur();}});
   document.getElementById("weekSel").addEventListener("change",function(e){switchWeek(e.target.value);});
   document.getElementById("newWeekBtn").addEventListener("click",startNewWeek);
   var divbarEl=document.getElementById("divbar");   // 부문 필터바 (데스크톱 칩 / 모바일 셀렉)
