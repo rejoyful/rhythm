@@ -109,17 +109,16 @@ body.dark .row.goal.deep{box-shadow:inset 3px 0 0 var(--rail),inset 12px 0 0 #33
 .addhist .ms{font-size:1.15rem;}
 /* "@이름" 멘션 — 표시 전용 강조(호출 아님) */
 .mention{font-weight:700;color:var(--red);}
-/* #성공 이 붙은 줄 = 그 줄 업무 완료 처리(취소선). 줄 단위 플래그라 줄 단위로 표시한다. */
-.lndone{color:var(--faint);text-decoration:line-through;}
-/* 행 전체 취소선은 끄고 줄 단위(.lndone)에 맡긴다 — 여러 줄 중 일부만 성공일 수 있으므로 */
-.row.done .goalwhat{color:inherit;text-decoration:none;}
-/* 줄머리 플래그 — 내용 칸 각 줄 앞의 #목표 토큰. 칩 글자가 저장 텍스트와 동일해 왕복이 안전하다.
+/* 한 행 = 한 줄이라 #성공은 행 전체 취소선으로 표현한다(예전 .lndone 줄 단위 처리를 대체). */
+.row.done .goalwhat{color:var(--faint);text-decoration:line-through;}
+/* 플래그칩 — 행의 상태. 본문 밖 독립 칸이라 편집 텍스트와 섞이지 않는다.
    클릭하면 다음 플래그로 순환(app.js .flag 핸들러). */
-/* 칩을 누르면 드롭다운에서 고른다. 캐럿은 CSS 생성 콘텐츠라 innerText(=저장값)에 섞이지 않는다.
-   (아이콘 span 이나 <select> 를 본문에 넣으면 저장값이 오염되므로 반드시 ::after 로) */
-.flag{position:relative;display:inline-block;font-family:var(--body);font-size:.72rem;font-weight:700;letter-spacing:0;
-  line-height:1.5;padding:.05rem .95rem .05rem .38rem;margin-right:.3rem;border:1px solid transparent;
-  cursor:pointer;user-select:none;white-space:nowrap;vertical-align:.05em;}
+.flag{position:relative;justify-self:start;align-self:center;display:inline-flex;align-items:center;justify-content:center;
+  min-width:4.2rem;height:1.7rem;font-family:var(--body);font-size:.72rem;font-weight:700;letter-spacing:0;
+  line-height:1;padding:0 .9rem 0 .4rem;background:transparent;border:1px solid transparent;
+  cursor:pointer;user-select:none;white-space:nowrap;box-sizing:border-box;}
+.flag.none{color:var(--faint);border-color:var(--line2);}
+.flag:disabled{cursor:default;}
 .flag:hover{filter:brightness(.95);}
 .flag::after{content:"expand_more";font-family:'Material Symbols Outlined';font-feature-settings:'liga';
   font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;position:absolute;right:.02rem;top:50%;
@@ -157,8 +156,8 @@ body.dark .tlink{color:#7ab0ff;}
 .phead .cnt{flex:none;font-family:var(--mono);font-size:.72rem;font-weight:700;color:var(--mut);background:var(--empty);padding:.12rem .4rem;}
 /* ---- Goal(뎁스2) / 세부(뎁스3) — 이번 주에 끝낼 단위 ---- */
 .row.goal{align-items:center;}
-.goal .goalwhat{font-size:1rem;padding-left:1.5rem;}          /* 들여쓰기는 내용만 — 담당·상태 열은 정렬 유지 */
-.goal.deep .goalwhat{font-size:.9rem;padding-left:3rem;color:var(--mut);}
+.goal .goalwhat{font-size:1rem;padding-left:.2rem;white-space:pre-wrap;overflow-wrap:anywhere;}
+.goal.deep .goalwhat{font-size:.9rem;padding-left:1.2rem;color:var(--mut);}
 .goal.deep .pri.sub{padding-left:1.5rem;}
 .goal.deep .pri.sub .ms{font-size:1rem;}
 .goal.deep .ochip{transform:scale(.92);transform-origin:right center;}   /* 우측 끝 정렬 유지하며 축소 */
@@ -375,11 +374,13 @@ body.dark .ochip:hover{filter:brightness(1.14);}
 
   /* Goal 카드: [내용] 위 / [담당] 아래 우측. 들여쓰기 대신 왼쪽 레일로 뎁스를 표시해 가로 폭을 아낀다.
      상태는 내용 안의 줄머리 플래그가 대신하므로 행 단위 칩은 없다. */
-  .row.goal{grid-template-columns:minmax(0,1fr)!important;margin-left:0;column-gap:.5rem;padding-left:1.4rem;}
+  /* 한 행 = 한 줄이므로 [플래그][내용][담당]을 한 줄에 놓는다(담당을 내리면 높이가 두 배). */
+  .row.goal{grid-template-columns:auto minmax(0,1fr) auto!important;margin-left:0;column-gap:.5rem;padding-left:1.4rem;align-items:center;}
+  .row.goal .flag{grid-column:1;grid-row:1;min-width:3.4rem;height:1.5rem;font-size:.66rem;padding:0 .75rem 0 .3rem;}
   .row.goal.deep{padding-left:2.4rem;}
   .row.goal .pri{display:none;}
-  .row.goal .goalwhat{grid-column:1 / -1;grid-row:1;white-space:pre-wrap;padding-left:0;}
-  .row.goal .ochip{grid-column:1 / -1;grid-row:2;justify-self:end;}   /* 담당은 행 끝 */
+  .row.goal .goalwhat{grid-column:2;grid-row:1;white-space:pre-wrap;padding-left:0;}
+  .row.goal .ochip{grid-column:3;grid-row:1;justify-self:end;}   /* 담당은 같은 줄 끝 */
   /* 진행률(프로젝트 전용)은 우측에 간소하게 — 미니 바 + %. 칸이 좁아 오터치가 나므로 칸 클릭은 끄고,
      영역 전체를 탭하면 10%씩 오르게 한다(app.js 의 .prog 핸들러). */
   .row .prog{gap:.35rem;justify-self:end;}

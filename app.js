@@ -22,16 +22,39 @@
     var n=1+Math.round(((t-w1)/864e5-3+((w1.getDay()+6)%7))/7);return t.getFullYear()+"-W"+pad(n);}
   function normalize(st){st=st||{};if(!st.title)st.title="주간 리듬 미팅";if(!st.part)st.part="UX 기획파트";if(!st.tasks)st.tasks=[];
     st.tasks.forEach(function(t,i){if(t.id==null)t.id="t"+i+"_"+Math.random().toString(36).slice(2,7);if(t.asis===undefined&&t.tobe===undefined){t.asis=t.why||"";t.tobe="";}});
-    backfillFlags(st.tasks);return st;}
+    splitGoalLines(st.tasks);backfillFlags(st.tasks);return st;}
+  // 구버전 이관 — 한 칸에 여러 줄이던 Goal 을 **줄마다 한 행**으로 나눈다.
+  // 첫 줄은 원래 행에 남겨 id·담당·자식을 유지하고, 나머지는 바로 뒤 형제로 끼운다. 멱등.
+  function splitGoalLines(tasks){
+    var list=tasks||[];
+    var targets=list.filter(function(t){return t&&t.parent&&String(t.what||"").indexOf("\n")>=0;});
+    targets.forEach(function(t){
+      var parts=String(t.what||"").split("\n").map(stripFlag)
+        .filter(function(pp){return pp.text||pp.flag;});
+      if(!parts.length)return;
+      t.what=parts[0].text;if(!t.flag)t.flag=parts[0].flag;
+      parts.slice(1).forEach(function(pp,i){
+        var nt=Object.assign({},t,{
+          id:"t"+Date.now()+"_"+i+"_"+Math.random().toString(36).slice(2,7),
+          pri:(t.pri||0)+(i+1)/(parts.length+1),
+          what:pp.text,flag:pp.flag,_v:Date.now()});
+        list.push(nt);});
+    });
+    if(!targets.length)return;
+    // 같은 부모끼리 pri 를 정수로 다시 매긴다(전역 renumberAll 은 state 를 보므로 여기선 직접).
+    var byP={};
+    list.forEach(function(t){var k=String(t.parent||"");(byP[k]=byP[k]||[]).push(t);});
+    Object.keys(byP).forEach(function(k){
+      byP[k].sort(function(a,b){return (a.pri||0)-(b.pri||0);})
+            .forEach(function(t,i){t.pri=i+1;});});}
   // 플래그 기본값 #진행 — 플래그가 없는 하위(Goal·세부)에 한 번 붙여준다.
-  // 플래그가 상태를 대신하게 됐으므로, 기존 데이터도 기본 상태를 갖게 맞추는 것.
   function backfillFlags(tasks){(tasks||[]).forEach(function(t){
     if(!t||!t.parent)return;                                   // 프로젝트는 대상 아님
-    var w=String(t.what||"");if(!w.trim())return;              // 빈 내용은 그대로(안내문 표시)
-    var first=w.split("\n")[0];
-    if(FLAGRE.test(first))return;                              // 이미 플래그 있으면 유지
-    var lead=/^(\s*(?:•\s*)?)/.exec(first)[1]||"";              // 불릿·공백은 보존
-    t.what=lead+"#진행 "+first.slice(lead.length)+w.slice(first.length);
+    if(t.flag)return;                                          // 이미 있으면 유지
+    var sp=stripFlag(String(t.what||""));
+    if(sp.flag){t.flag=sp.flag;t.what=sp.text;return;}          // 구버전 줄머리 → 필드로
+    if(!sp.text)return;                                        // 빈 내용은 그대로(안내문 표시)
+    t.what=sp.text;t.flag="진행";
   });}
   function applyView(d){state=normalize(d);readOnly=(viewWeek!==curWeek);
     var dt=document.getElementById("docTitle");if(dt)dt.textContent=state.title;
@@ -112,7 +135,7 @@
     var ns=new Date(curStart);ns.setDate(ns.getDate()+7);var newId=isoWeekId(ns);
     while(weeksList.indexOf(newId)>=0){ns.setDate(ns.getDate()+7);newId=isoWeekId(ns);}
     var carried=state.tasks.filter(carries).map(function(t){
-      return {id:t.id,parent:(t.parent||null),pri:t.pri,what:t.what,division:t.division,asis:t.asis,tobe:t.tobe,owner:t.owner,due:t.due,wedPct:t.wedPct,wedNote:"—",friStatus:"진행중",friNote:"—",_v:Date.now()};});   // 부문·진행률은 이월(작업이 이어지므로)
+      return {id:t.id,parent:(t.parent||null),pri:t.pri,what:t.what,division:t.division,asis:t.asis,tobe:t.tobe,owner:t.owner,flag:(t.parent?"진행":undefined),due:t.due,wedPct:t.wedPct,wedNote:"—",friStatus:"진행중",friNote:"—",_v:Date.now()};});   // 부문·진행률은 이월, 플래그는 #진행 으로 되돌림
     // carries() 가 조상까지 검사하므로 부모 없는 고아가 생기지 않는다 → 최상위 승격 처리 불필요
     var data=normalize({start:isoDate(ns),label:weekLabel(ns),title:state.title,part:state.part,tasks:carried});
     sb.from("rhythm").upsert({id:newId,data:Object.assign({},data,{_by:CLIENT}),updated_at:new Date().toISOString()}).then(function(){
@@ -190,7 +213,7 @@
   // 뎁스1 프로젝트: 부문칩 | 이름 | 진행률 | (빈칸) | 기한
   // 뎁스2~3 Goal:   ↳ | 내용 | 담당 | 상태   ← 담당·상태가 프로젝트의 (빈칸)·기한 열과 정렬된다
   var COLS_PROJECT="4.2rem minmax(0,1fr) 13rem 3rem 10rem";   // 부문 | 이름 | 진행률 | 여백 | 기한
-  var COLS_GOAL="4.2rem minmax(0,1fr) 10rem";                 // ↳ | 내용 | 담당(= 기한 열과 정렬)
+  var COLS_GOAL="4.2rem 5rem minmax(0,1fr) 10rem";            // ↳ | 플래그 | 내용 | 담당(= 기한 열과 정렬)
   var MAXDEPTH=2;   // 0=프로젝트, 1=Goal, 2=세부 (최대 3단계)
   var STATUS=[
     {k:"진행중",icon:"radio_button_unchecked",cls:""},
@@ -205,24 +228,30 @@
   // 내용 칸의 "각 줄" 앞에 #목표 처럼 적으면 틴트 칩으로 보이고, 칩을 클릭하면 다음 플래그로 순환한다.
   // 칩에 보이는 글자가 저장된 텍스트와 똑같아서(#목표) contenteditable 의 innerText 왕복이 깨지지 않는다.
   var FLAGS=["목표","진행","성공","실패","보류","대기","이슈"];
+  // 타이핑 단축 입력·구버전 이관에 쓰는 줄머리 패턴(불릿도 함께 걷어낸다).
   var FLAGRE=/^(\s*(?:•\s*)?)#(목표|진행|성공|실패|보류|대기|이슈)(?=\s|$)/;
-  function flagOf(t){var m=FLAGRE.exec(String((t&&t.what)||"").split("\n")[0]);return m?m[2]:"";}
-  function goalDone(t){return flagOf(t)==="성공";}   // 첫 줄 플래그가 성공 = 달성
+  function stripFlag(line){
+    var raw=String(line),m=FLAGRE.exec(raw);
+    if(m)return {flag:m[2],text:raw.slice(m[0].length).trim()};
+    return {flag:"",text:raw.replace(/^\s*•\s*/,"").trim()};}
+  // **한 행 = 한 줄**이라 플래그는 행의 값(t.flag)이다. 본문 텍스트에 섞지 않는다.
+  function flagOf(t){return (t&&t.flag)||"";}
+  function goalDone(t){return flagOf(t)==="성공";}
+  // 플래그칩 — 본문 밖 독립 칸.
+  function flagCell(t){
+    var v=flagOf(t),i=FLAGS.indexOf(v);
+    return '<button class="flag f'+i+(v?"":" none")+'" data-id="'+t.id+'"'+(EDITABLE?"":" disabled")
+      +' title="'+(v?"상태: #"+v:"상태 지정")+'">'+(v?"#"+esc(v):"—")+'</button>';}
 
   // ----- 플래그 드롭다운 -----
   var flagPop=null;
   function closeFlagPop(){if(flagPop){flagPop.remove();flagPop=null;}}
-  // setFlag — 그 줄의 플래그만 바꾼다(v="" 이면 제거). 불릿·앞 공백은 보존.
-  function setFlag(id,line,v){
+  // setFlag — 행의 값만 바꾼다(v="" 이면 없음). 본문 텍스트는 건드리지 않는다.
+  function setFlag(id,v){
     var t=getTask(id);if(!t)return;
-    var lines=String(t.what||"").split("\n");
-    var cur=lines[line]||"",m=FLAGRE.exec(cur);
-    var lead=m?m[1]:(/^(\s*(?:•\s*)?)/.exec(cur)[1]||"");
-    var rest=m?cur.slice(m[0].length):cur.slice(lead.length);
-    lines[line]=v?(lead+"#"+v+(rest&&!/^\s/.test(rest)?" ":"")+rest):(lead+rest.replace(/^\s+/,""));
-    t.what=lines.join("\n");touch(t);saveLocal();render();
+    t.flag=v;touch(t);saveLocal();render();
   }
-  function openFlagPop(chip,id,line){
+  function openFlagPop(chip,id){
     closeFlagPop();if(readOnly||!id)return;
     var el=document.createElement("div");el.className="flagpop";
     el.innerHTML=FLAGS.map(function(f,i){
@@ -236,7 +265,7 @@
     el.addEventListener("mousedown",function(e){e.preventDefault();});   // 캐럿 이동 방지
     el.addEventListener("click",function(e){
       var b=e.target.closest(".flagopt");if(!b)return;
-      setFlag(id,line,b.dataset.v);closeFlagPop();
+      setFlag(id,b.dataset.v);closeFlagPop();
     });
   }
   document.addEventListener("mousedown",function(e){
@@ -256,17 +285,8 @@
     }
     return out+plain(s.slice(last));
   }
-  function mentionHtml(s){
-    return String(s).split("\n").map(function(line,i){
-      var m=FLAGRE.exec(line);
-      if(!m)return inlineHtml(line);
-      var rest=inlineHtml(line.slice(m[0].length));
-      if(m[2]==="성공")rest='<span class="lndone">'+rest+'</span>';   // 성공 = 그 줄 업무 완료 처리
-      return esc(m[1])
-        +'<span class="flag f'+FLAGS.indexOf(m[2])+'" contenteditable="false" data-line="'+i+'" title="클릭하면 다음 플래그">#'+m[2]+'</span>'
-        +rest;
-    }).join("\n");
-  }
+  // 한 행 = 한 줄이므로 줄 분해가 없다. 플래그는 본문 밖 칩(flagCell), #성공 취소선은 행(.row.done)이 담당.
+  function mentionHtml(s){return inlineHtml(s);}
   function escAttr(s){return esc(s).replace(/"/g,"&quot;");}
   function CE(){return EDITABLE?" contenteditable":"";}
   function edWhat(t){return '<div class="what"'+CE()+' data-field="what" data-id="'+t.id+'" title="'+escAttr(t.what)+'">'+esc(t.what)+'</div>';}
@@ -381,7 +401,7 @@
   // Goal(뎁스2) / 세부(뎁스3) — 이번 주 안에 끝낼 단위. 기한·진행률 없음(프로젝트에만), 상태칩은 행 끝.
   function goalCells(t){
     return '<div class="pri sub" data-id="'+t.id+'"><span class="ms">subdirectory_arrow_right</span></div>'
-      +ed("what",t.id,t.what||"","note goalwhat","Goal")+ownerCell(t);   // 상태칩 제거 → 줄머리 플래그가 대신, 담당은 행 끝
+      +flagCell(t)+ed("what",t.id,t.what||"","note goalwhat","Goal")+ownerCell(t);   // 플래그는 본문 밖 칸, 담당은 행 끝
   }
 
   function render(){
@@ -434,6 +454,18 @@
       else{var n=Math.max(0,Math.min(100,parseInt(raw,10)));t.wedPct=n;if(box)box.querySelector(".bar").innerHTML=segHtml(n);}
       if(t.wedPct===100)t.friStatus="완료";else if(t.friStatus==="완료")t.friStatus="진행중";}
     else if(f==="pri"){var p=parseInt(el.textContent.replace(/[^0-9]/g,""),10);if(!isNaN(p))t.pri=p;}
+    else if(f==="what"&&t.parent){
+      // 입력 방법은 예전 그대로 — 내용 앞에 "#성공 " 을 치면 그 자리에서 플래그 필드로 뺀다.
+      var sp=stripFlag(el.innerText);
+      if(sp.flag){t.flag=sp.flag;t.what=sp.text;
+        var off=caretOffset(el),removed=el.innerText.length-sp.text.length;
+        el.textContent=sp.text;
+        setCaretOffset(el,Math.max(0,(off==null?sp.text.length:off)-removed));
+        touch(t);saveLocal();
+        var chip=tb.querySelector('.flag[data-id="'+t.id+'"]');
+        if(chip){chip.className="flag f"+FLAGS.indexOf(sp.flag);chip.textContent="#"+sp.flag;}
+        return;}
+      t.what=el.innerText;}
     else t[f]=el.innerText;
     touch(t);saveLocal();
   });
@@ -486,15 +518,9 @@
     if(chip){var tt=getTask(chip.dataset.id);if(!tt)return;
       var idx=STATUS.map(function(s){return s.k;}).indexOf(tt.friStatus);
       tt.friStatus=STATUS[(idx+1)%STATUS.length].k;touch(tt);saveLocal();render();return;}
-    // 줄머리 플래그 칩 클릭 → 드롭다운에서 골라 바꾼다.
-    // contenteditable 안에 <select> 를 넣으면 옵션 텍스트가 innerText(=저장값)에 섞이므로
-    // 목록은 본문 밖(body)에 그리는 커스텀 드롭다운으로 만든다.
+    // 플래그칩 클릭 → 드롭다운에서 골라 바꾼다. 칩이 본문 밖 칸이라 저장값과 섞이지 않는다.
     var fl=e.target.closest(".flag");
-    if(fl){
-      var cell=fl.closest("[data-field]"),row0=fl.closest("[data-id]");
-      openFlagPop(fl,cell?cell.dataset.id:(row0&&row0.dataset.id),parseInt(fl.dataset.line,10)||0);
-      return;
-    }
+    if(fl){openFlagPop(fl,fl.dataset.id);return;}
   });
 
   // ----- multi-line bullet editing (keeps newlines; Enter starts/continues a bullet list) -----
@@ -539,22 +565,38 @@
   tb.addEventListener("compositionstart",function(){composing=true;});
   tb.addEventListener("compositionend",function(e){composing=false;
     if(!readOnly&&e.target&&e.target.classList&&e.target.classList.contains("note"))plainify(e.target);});
+  // 한 줄 = 한 행. Enter 는 바로 뒤에 같은 레벨 행을 만들고, 빈 행 Backspace 는 그 행을 지운다.
+  function addSibling(id){
+    var cur=getTask(id);if(!cur||!cur.parent)return null;
+    var nt={id:"t"+Date.now(),parent:cur.parent,pri:(cur.pri||0)+0.5,what:"",asis:"",tobe:"",
+      owner:cur.owner||"—",flag:"진행",due:"—",wedPct:null,wedNote:"—",
+      friStatus:"진행중",friNote:"—",_v:Date.now()};
+    state.tasks.push(nt);renumberAll();saveLocal();render();return nt.id;}
+  function removeEmpty(id){
+    var t=getTask(id);if(!t||!t.parent)return null;
+    if(String(t.what||"").trim())return null;              // 내용이 있으면 지우지 않는다
+    if(childrenOf(t.id).length)return null;                // 하위가 달려 있으면 보호
+    var sibs=childrenOf(t.parent);if(sibs.length<=1)return null;   // 마지막 한 줄은 남긴다
+    var i=sibs.map(function(x){return x.id;}).indexOf(t.id);
+    var prev=i>0?sibs[i-1]:sibs[i+1];
+    t._del=true;touch(t);renumberAll();saveLocal();render();
+    return prev?prev.id:null;}
+  function focusGoal(id){
+    if(!id)return;
+    var el=tb.querySelector('.goalwhat[data-id="'+id+'"]');
+    if(el)placeCaretEnd(el);}
   tb.addEventListener("keydown",function(e){
-    if(e.key!=="Enter"||readOnly)return;
+    if(readOnly)return;
     var el=e.target;if(!el||!el.isContentEditable)return;
-    if(el.classList.contains("why")||el.classList.contains("note")){   // multi-line content fields
-      e.preventDefault();
-      if(!e.isComposing)plainify(el);   // 새 줄이 취소선 span 안으로 빨려 들어가지 않게
-      if(e.shiftKey){insertAtCaret(el,"\n");return;}                    // plain line break
-      var txt=el.innerText;
-      if(txt.indexOf("•")===-1&&txt.trim()){                           // first Enter → bullet every line
-        var lines=bulletLines(txt);lines.push("• ");
-        el.innerText=lines.join("\n");placeCaretEnd(el);
-        el.dispatchEvent(new Event("input",{bubbles:true}));
-      }else{insertAtCaret(el,txt.trim()?"\n• ":"• ");}                 // add a bullet at the caret
-      return;
-    }
-    e.preventDefault();el.blur();   // title / number cells: Enter commits, no newline
+    var isGoal=el.classList.contains("goalwhat");
+    if(e.key==="Backspace"&&isGoal&&!e.isComposing&&!el.innerText.trim()){
+      e.preventDefault();focusGoal(removeEmpty(el.dataset.id));return;}
+    if(e.key!=="Enter")return;
+    if(!e.isComposing)plainify(el);   // 강조 span 안으로 빨려 들어가지 않게
+    e.preventDefault();
+    if(e.isComposing)return;          // 한글 조합 확정용 Enter 는 행을 만들지 않는다
+    if(isGoal){focusGoal(addSibling(el.dataset.id));return;}
+    el.blur();   // title / number cells: Enter commits, no newline
   });
 
   // ----- drag & drop reorder -----
