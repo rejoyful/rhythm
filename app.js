@@ -108,7 +108,7 @@
   function isEditing(){var a=document.activeElement;if(!a)return false;
     if(a.id==="docTitle")return true;
     return (a.isContentEditable||a.tagName==="INPUT"||a.tagName==="TEXTAREA")&&!!(a.closest&&a.closest("#tbody"));}
-  function scheduleRender(){if(isEditing())pendingRender=true;else render();}
+  function scheduleRender(){if(isEditing()||drag)pendingRender=true;else render();}   // 드래그 중 렌더는 집어든 표시를 지우므로 미룬다
   // Per-task merge: keep the newer version of each task by _v (deletes travel as _del tombstones),
   // so two people editing different tasks never overwrite each other. If our local copy is the
   // newer one, we re-upload so the shared row converges.
