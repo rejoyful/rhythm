@@ -76,9 +76,9 @@ body.dragging-active .dragh{cursor:grabbing;}
 /* 뎁스 위계 — 프로젝트(흰 바탕) > Goal(옅은 회색) > 세부(한 단 더 진하게).
    왼쪽 세로 레일이 뎁스를 표시해 가로 폭을 쓰지 않고도 계층이 읽힌다. */
 .row.goal{background:#f6f6f6;box-shadow:inset 3px 0 0 var(--line2);}
-.row.goal.deep{background:#efefef;box-shadow:inset 3px 0 0 var(--line2),inset 9px 0 0 var(--line);}
+.row.goal.deep{background:#e4e7ec;}
 body.dark .row.goal{background:#171717;box-shadow:inset 3px 0 0 #333;}
-body.dark .row.goal.deep{background:#1e1e1e;box-shadow:inset 3px 0 0 #333,inset 9px 0 0 #262626;}
+body.dark .row.goal.deep{background:#26282d;}
 /* ---- Project header (top-level task with children) — same on Mon/Wed/Fri ---- */
 /* 프로젝트 행은 "섹션 헤더"처럼 — 위에 굵은 라인으로 새 블록을 열고, 아래 경계는 없앤다.
    그러면 프로젝트 + 그 하위 Goal 이 하나의 덩어리로 읽히고 다음 프로젝트와 뚜렷이 갈린다. */
@@ -96,8 +96,11 @@ body.dark .row.gd1{--rail:#9fc0ee;} body.dark .row.gd2{--rail:#c3a6ea;} body.dar
 body.dark .row.gd4{--rail:#e6a071;} body.dark .row.gd5{--rail:#86ccd6;} body.dark .row.gd6{--rail:#b9c0cd;}
 .row.project{box-shadow:inset 3px 0 0 var(--rail);}
 .row.goal{box-shadow:inset 3px 0 0 var(--rail);border-bottom:1px solid var(--line);}   /* 행마다 옅은 구분선 */
-.row.goal.deep{box-shadow:inset 3px 0 0 var(--rail),inset 12px 0 0 var(--line2);}
-body.dark .row.goal.deep{box-shadow:inset 3px 0 0 var(--rail),inset 12px 0 0 #333;}
+/* 3뎁스: 행 전체를 한 단 더 들여쓰고(플래그칩까지), 들여쓴 거터는 2뎁스 색으로 채워
+   "그 안에 들어가 있다"가 읽히게 한다. 앞 그림자가 위에 그려진다: 레일 → 거터 → 경계선 → 배경. */
+.row.goal.deep{padding-left:5.2rem;
+  box-shadow:inset 3px 0 0 var(--rail),inset 4.4rem 0 0 #f6f6f6,inset 4.5rem 0 0 var(--line2);}
+body.dark .row.goal.deep{box-shadow:inset 3px 0 0 var(--rail),inset 4.4rem 0 0 #171717,inset 4.5rem 0 0 #3a3a3a;}
 .row.groupend{border-bottom:1px solid var(--line);margin-bottom:.55rem;}
 .row.project .pri{font-size:1.55rem;}
 .phead{display:flex;align-items:center;gap:.9rem;min-width:0;}
@@ -159,8 +162,8 @@ body.dark .tlink{color:#7ab0ff;}
 .row.goal{align-items:center;padding-top:.3rem;padding-bottom:.3rem;}
 .goal .goalwhat{line-height:1.35;}
 .goal .goalwhat{font-size:1rem;padding-left:.2rem;white-space:pre-wrap;overflow-wrap:anywhere;}
-.goal.deep .goalwhat{font-size:.9rem;padding-left:1.2rem;color:var(--mut);}
-.goal.deep .pri.sub{padding-left:1.5rem;}
+.goal.deep .goalwhat{font-size:.9rem;color:var(--mut);}   /* 들여쓰기는 행 패딩이 담당 */
+.goal.deep .pri.sub{padding-left:0;}
 .goal.deep .pri.sub .ms{font-size:1rem;}
 .goal.deep .ochip{transform:scale(.92);transform-origin:right center;}   /* 우측 끝 정렬 유지하며 축소 */
 /* 빈 Goal 은 작성 기준을 안내 — "이번 주 안에 끝낼 일" */
@@ -387,7 +390,9 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   /* 한 행 = 한 줄이므로 [플래그][내용][담당]을 한 줄에 놓는다(담당을 내리면 높이가 두 배). */
   .row.goal{grid-template-columns:auto minmax(0,1fr) auto!important;margin-left:0;column-gap:.5rem;padding-left:1.4rem;align-items:center;}
   .row.goal .flag{grid-column:1;grid-row:1;min-width:3.4rem;height:1.5rem;font-size:.66rem;padding:0 .75rem 0 .3rem;}
-  .row.goal.deep{padding-left:2.4rem;}
+  .row.goal.deep{padding-left:3.4rem;
+    box-shadow:inset 3px 0 0 var(--rail),inset 2.6rem 0 0 #f6f6f6,inset 2.7rem 0 0 var(--line2);}
+  body.dark .row.goal.deep{box-shadow:inset 3px 0 0 var(--rail),inset 2.6rem 0 0 #171717,inset 2.7rem 0 0 #3a3a3a;}
   .row.goal .pri{display:none;}
   .row.goal .goalwhat{grid-column:2;grid-row:1;white-space:pre-wrap;padding-left:0;}
   .row.goal .ochip{grid-column:3;grid-row:1;justify-self:end;}   /* 담당은 같은 줄 끝 */
