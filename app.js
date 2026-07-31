@@ -43,12 +43,19 @@
   // ----- 두레이 알림 -----
   // 좌표(주차·항목·줄번호)만 보내고 문구는 서버가 DB 에서 읽는다. 중복 차단도 서버 몫이라
   // 새로고침하거나 두 사람이 같은 줄을 건드려도 알림은 한 번만 간다.
-  var MENTIONRE=/@[A-Za-z0-9가-힣_]+/;
+  // 표시(강조)는 "@"+글자 아무거나에 붙지만, **알림은 팀원 이름일 때만** 나간다.
+  // (@외부업체 · @검토 같은 메모까지 대화방에 울리면 안 되므로)
+  var MENTIONRE=/@([A-Za-z0-9가-힣_]+)/g;
+  function mentionNamesOf(line){   // 부를 때는 직급 없이 "@이해원" 이므로 이름 토큰만 본다
+    var names=ROSTER.map(function(o){return String(o).split(/\s+/)[0];}),out=[],m;
+    MENTIONRE.lastIndex=0;
+    while((m=MENTIONRE.exec(String(line))))if(names.indexOf(m[1])>=0&&out.indexOf(m[1])<0)out.push(m[1]);
+    return out;}
   var notifyQ={};
   function queueNotify(t){
     if(!NOTIFY_FN||!sb||readOnly||!viewWeek||viewWeek!==curWeek||!t)return;
     String(t.what||"").split("\n").forEach(function(line,i){
-      if(MENTIONRE.test(line))notifyQ[t.id+"|"+i]=1;
+      if(mentionNamesOf(line).length)notifyQ[t.id+"|"+i]=1;
     });
   }
   // 저장이 실제로 끝난 뒤에 부른다 — 서버가 읽을 때 그 문구가 DB 에 있어야 하므로.
@@ -409,10 +416,17 @@
   function getTask(id){return state.tasks.filter(function(x){return String(x.id)===String(id);})[0];}
 
   var tb=document.getElementById("tbody");
+  // 포커스가 들어오면 강조를 평문으로 되돌린다(타이핑 중 캐럿 안정 + 취소선 span 흡수 방지).
+  tb.addEventListener("focusin",function(e){
+    var el=e.target;
+    if(readOnly||!el||!el.classList||!el.classList.contains("note"))return;
+    plainify(el);
+  });
   tb.addEventListener("input",function(e){
     if(readOnly)return;
     var el=e.target;if(!el.dataset||!el.dataset.field)return;
     if(el.tagName==="SELECT"||el.tagName==="INPUT")return;
+    if(el.classList.contains("note")&&!composing)plainify(el);
     var t=getTask(el.dataset.id);if(!t)return;
     var f=el.dataset.field;
     if(f==="wedPct"){var raw=el.textContent.replace(/[^0-9]/g,"");var box=el.closest(".prog");
@@ -485,6 +499,27 @@
 
   // ----- multi-line bullet editing (keeps newlines; Enter starts/continues a bullet list) -----
   function placeCaretEnd(el){el.focus();var r=document.createRange();r.selectNodeContents(el);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}
+  // 캐럿의 텍스트 오프셋(요소 시작 기준). 마크업을 걷어내도 같은 자리로 되돌리려고 잰다.
+  function caretOffset(el){
+    var sel=window.getSelection();if(!sel||!sel.rangeCount)return null;
+    var r=sel.getRangeAt(0);if(!el.contains(r.endContainer))return null;
+    var pre=document.createRange();pre.selectNodeContents(el);pre.setEnd(r.endContainer,r.endOffset);
+    return pre.toString().length;}
+  function setCaretOffset(el,off){
+    var walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT),acc=0,node;
+    while((node=walker.nextNode())){
+      var len=node.textContent?node.textContent.length:0;
+      if(acc+len>=off){var r=document.createRange();r.setStart(node,off-acc);r.collapse(true);
+        var s=window.getSelection();s.removeAllRanges();s.addRange(r);return;}
+      acc+=len;}
+    placeCaretEnd(el);}
+  // plainify — 편집 중에는 강조 마크업이 남아 있으면 안 된다.
+  // #성공 줄 뒷부분은 <span class="lndone">(취소선)로 감싸여 있어서, 그 span 이 열린 채 캐럿이 끝에 있으면
+  // Enter·타이핑이 span 안쪽으로 들어가 새 줄과 그 아래가 전부 성공처럼 보인다. 캐럿은 오프셋으로 보존.
+  function plainify(el){
+    if(!el.querySelector(".flag, .lndone, .mention, a.tlink"))return;
+    var off=caretOffset(el);el.textContent=el.innerText;
+    if(off!=null)setCaretOffset(el,off);}
   function bulletLines(txt){return txt.split("\n").map(function(l){l=l.replace(/^\s*•\s*/,"");return l.trim()?"• "+l:l;});}
   // insert a REAL newline text node at the caret (execCommand("insertText","\n") is unreliable in
   // Chrome — it often drops the break, so the newline never reaches innerText/state and vanishes on
@@ -500,11 +535,16 @@
     sel.removeAllRanges();sel.addRange(range);
     el.dispatchEvent(new Event("input",{bubbles:true}));
   }
+  var composing=false;   // 한글 IME 조합 중에는 DOM 을 건드리면 조합이 깨진다
+  tb.addEventListener("compositionstart",function(){composing=true;});
+  tb.addEventListener("compositionend",function(e){composing=false;
+    if(!readOnly&&e.target&&e.target.classList&&e.target.classList.contains("note"))plainify(e.target);});
   tb.addEventListener("keydown",function(e){
     if(e.key!=="Enter"||readOnly)return;
     var el=e.target;if(!el||!el.isContentEditable)return;
     if(el.classList.contains("why")||el.classList.contains("note")){   // multi-line content fields
       e.preventDefault();
+      if(!e.isComposing)plainify(el);   // 새 줄이 취소선 span 안으로 빨려 들어가지 않게
       if(e.shiftKey){insertAtCaret(el,"\n");return;}                    // plain line break
       var txt=el.innerText;
       if(txt.indexOf("•")===-1&&txt.trim()){                           // first Enter → bullet every line
