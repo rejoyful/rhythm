@@ -22,7 +22,7 @@
     var n=1+Math.round(((t-w1)/864e5-3+((w1.getDay()+6)%7))/7);return t.getFullYear()+"-W"+pad(n);}
   function normalize(st){st=st||{};if(!st.title)st.title="주간 리듬 미팅";if(!st.part)st.part="UX 기획파트";if(!st.tasks)st.tasks=[];
     st.tasks.forEach(function(t,i){if(t.id==null)t.id="t"+i+"_"+Math.random().toString(36).slice(2,7);if(t.asis===undefined&&t.tobe===undefined){t.asis=t.why||"";t.tobe="";}});
-    splitGoalLines(st.tasks);backfillFlags(st.tasks);return st;}
+    splitGoalLines(st.tasks);dropSplitDuplicates(st.tasks);backfillFlags(st.tasks);return st;}
   // 구버전 이관 — 한 칸에 여러 줄이던 Goal 을 **줄마다 한 행**으로 나눈다.
   // 첫 줄은 원래 행에 남겨 id·담당·자식을 유지하고, 나머지는 바로 뒤 형제로 끼운다. 멱등.
   function splitGoalLines(tasks){
@@ -33,12 +33,13 @@
         .filter(function(pp){return pp.text||pp.flag;});
       if(!parts.length)return;
       t.what=parts[0].text;if(!t.flag)t.flag=parts[0].flag;
+      // id·_v 는 **반드시 결정적**이어야 한다. normalize 는 폴링마다 원격 블롭에도 도는데,
+      // 매번 새 id 를 만들면 mergeInto 가 새 항목으로 보고 계속 쌓아 중복이 생긴다.
       parts.slice(1).forEach(function(pp,i){
-        var nt=Object.assign({},t,{
-          id:"t"+Date.now()+"_"+i+"_"+Math.random().toString(36).slice(2,7),
+        list.push(Object.assign({},t,{
+          id:t.id+"_l"+(i+2),          // 원본 id + 줄번호 → 몇 번을 돌려도 같은 id
           pri:(t.pri||0)+(i+1)/(parts.length+1),
-          what:pp.text,flag:pp.flag,_v:Date.now()});
-        list.push(nt);});
+          what:pp.text,flag:pp.flag,_v:t._v}));});
     });
     if(!targets.length)return;
     // 같은 부모끼리 pri 를 정수로 다시 매긴다(전역 renumberAll 은 state 를 보므로 여기선 직접).
@@ -47,6 +48,17 @@
     Object.keys(byP).forEach(function(k){
       byP[k].sort(function(a,b){return (a.pri||0)-(b.pri||0);})
             .forEach(function(t,i){t.pri=i+1;});});}
+  // 초기 이관 버그가 남긴 행 — "t{13자리}_{줄번호}_{랜덤5}". 지금은 결정적 id 라 새로 안 생긴다.
+  var SPLIT_ARTIFACT_RE=/^t\d{13}_\d+_[a-z0-9]{5}$/;
+  // dropSplitDuplicates — 그때 쌓인 중복만 골라, 내용이 똑같은 형제가 있을 때에 한해 삭제 표시.
+  function dropSplitDuplicates(tasks){
+    var list=tasks||[],seen={};
+    function key(t){return [t.parent||"",String(t.what||"").trim(),t.flag||"",t.owner||""].join(" ");}
+    list.forEach(function(t){if(t&&!t._del&&!SPLIT_ARTIFACT_RE.test(t.id))seen[key(t)]=1;});
+    list.forEach(function(t){
+      if(!t||t._del||!SPLIT_ARTIFACT_RE.test(t.id))return;
+      if(list.filter(function(k){return k.parent===t.id&&!k._del;}).length)return;   // 하위 보호
+      if(seen[key(t)])t._del=true;else seen[key(t)]=1;});}
   // 플래그 기본값 #진행 — 플래그가 없는 하위(Goal·세부)에 한 번 붙여준다.
   function backfillFlags(tasks){(tasks||[]).forEach(function(t){
     if(!t||!t.parent)return;                                   // 프로젝트는 대상 아님

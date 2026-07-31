@@ -95,7 +95,7 @@ body.dark .row.goal.deep{background:#1e1e1e;box-shadow:inset 3px 0 0 #333,inset 
 body.dark .row.gd1{--rail:#9fc0ee;} body.dark .row.gd2{--rail:#c3a6ea;} body.dark .row.gd3{--rail:#a6d6a8;}
 body.dark .row.gd4{--rail:#e6a071;} body.dark .row.gd5{--rail:#86ccd6;} body.dark .row.gd6{--rail:#b9c0cd;}
 .row.project{box-shadow:inset 3px 0 0 var(--rail);}
-.row.goal{box-shadow:inset 3px 0 0 var(--rail);border-bottom:none;}
+.row.goal{box-shadow:inset 3px 0 0 var(--rail);border-bottom:1px solid var(--line);}   /* 행마다 옅은 구분선 */
 .row.goal.deep{box-shadow:inset 3px 0 0 var(--rail),inset 12px 0 0 var(--line2);}
 body.dark .row.goal.deep{box-shadow:inset 3px 0 0 var(--rail),inset 12px 0 0 #333;}
 .row.groupend{border-bottom:1px solid var(--line);margin-bottom:.55rem;}
@@ -155,7 +155,9 @@ body.dark .tlink{color:#7ab0ff;}
 .coltog.off{visibility:hidden;}   /* 하위가 없으면 자리만 유지해 제목 시작선을 맞춘다 */
 .phead .cnt{flex:none;font-family:var(--mono);font-size:.72rem;font-weight:700;color:var(--mut);background:var(--empty);padding:.12rem .4rem;}
 /* ---- Goal(뎁스2) / 세부(뎁스3) — 이번 주에 끝낼 단위 ---- */
-.row.goal{align-items:center;}
+/* 한 행 = 한 줄이라 위아래 여백을 줄여 목록이 촘촘히 읽히게 한다. */
+.row.goal{align-items:center;padding-top:.3rem;padding-bottom:.3rem;}
+.goal .goalwhat{line-height:1.35;}
 .goal .goalwhat{font-size:1rem;padding-left:.2rem;white-space:pre-wrap;overflow-wrap:anywhere;}
 .goal.deep .goalwhat{font-size:.9rem;padding-left:1.2rem;color:var(--mut);}
 .goal.deep .pri.sub{padding-left:1.5rem;}
@@ -223,7 +225,15 @@ body.dark .fdate::-webkit-calendar-picker-indicator{filter:invert(1) brightness(
 .chip,.ochip{display:inline-flex;align-items:center;gap:.45rem;font-family:var(--body);font-size:.92rem;font-weight:700;
   letter-spacing:.02em;white-space:nowrap;border:1.5px solid var(--ink);height:2.5rem;padding:0 .8rem;background:var(--paper);cursor:pointer;
   color:var(--ink);user-select:none;transition:all .12s;box-sizing:border-box;}
-.ochip{position:relative;padding:0 1.5rem 0 .8rem;}   /* 오른쪽은 캐럿 자리 */
+/* 담당칩 — 이름만(직급 생략)으로 간소화하고 높이는 플래그칩에 맞춘다.
+   표시는 래퍼가 data-ini 를 찍고, 네이티브 select 가 칩 전체를 투명하게 덮는다
+   (한 요소가 "짧은 표시"와 "긴 옵션 목록"을 겸할 수 없어 나눈 것). */
+.ochip{position:relative;justify-self:end;justify-content:center;font-size:.78rem;
+  height:1.7rem;min-width:4.4rem;padding:0 1.05rem 0 .45rem;}
+.ochip::before{content:attr(data-ini);}
+.ochip>.ms{display:none;}
+.ochip .osel{position:absolute;inset:0;width:100%;height:100%;opacity:0;}
+.ochip::after{right:.15rem;font-size:.95rem;}
 .chip .ms,.ochip .ms{font-size:1.1rem;}
 /* 모든 상태칩이 같은 너비(가장 긴 "진행중" 기준) — 그래야 한 일·담당·기한 열이 행마다 어긋나지 않는다 */
 .chip{min-width:6rem;justify-content:center;}
@@ -394,10 +404,7 @@ body.dark .ochip:hover{filter:brightness(1.14);}
   /* 모바일 담당칩 — 풀네임을 놓을 폭이 없다. 보이는 글자는 래퍼가 이니셜(data-ini)로 찍고,
      native select 는 칩 전체를 투명하게 덮어 탭 영역만 담당한다(피커는 OS 가 띄운다). */
   .row .ochip{height:1.9rem;min-height:1.9rem;min-width:1.9rem;width:auto;padding:0 1.05rem 0 .4rem;justify-content:center;font-size:.8rem;}
-  .row .ochip::before{content:attr(data-ini);}
-  .row .ochip>.ms{display:none;}   /* person 아이콘은 이니셜과 중복이라 생략(캐럿은 남긴다 — 선택 가능 표시) */
-  .row .ochip::after{right:.1rem;font-size:.95rem;}
-  .row .ochip .osel{position:absolute;inset:0;width:100%;height:100%;opacity:0;}
+  .row .ochip::after{right:.1rem;}
   /* 기한 → borderless: calendar icon + short date; the native input is a transparent tap layer on top */
   .row .duec{position:relative;display:inline-flex;align-items:center;gap:.2rem;width:auto;min-width:0;height:1.9rem;}
   .row .duec::before{content:"calendar_month";font-family:'Material Symbols Outlined';font-feature-settings:'liga';
